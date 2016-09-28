@@ -1,0 +1,279 @@
+<div
+  class="
+    wiki-post-container
+    {{containerStoryboard}}
+    {{leftContextOpened ? 'left-context-opened' : ''}}
+    {{rightContextOpened ? 'right-context-opened' : ''}}
+  "
+>
+  <rv-require name="pl-scrolls" src="/public/vendor/plumes/scrolls/pl-scrolls"></rv-require>
+
+  <div class="pl-scrolls">
+
+    <article
+      class="
+        wiki-post
+        ps-container
+        {{storyboard}}
+        {{(editMode && editPost) || (!editMode && post && (post.id || post.in404)) ? 'has-post' : ''}}
+        {{editMode ? 'edit' : ''}}
+        {{post.locked ? 'post-locked' : ''}}
+        {{post && post.in404 ? 'wiki-post-in-404' : ''}}
+      "
+    >
+      <div class="text-selector"></div>
+
+      {{#inject wiki-post-before-header /}}
+
+      <header>
+        <div
+          class="wiki-post-cover {{haspost ? 'show' : ''}}"
+          style="transform: translateY({{coverScrollingTop}}px);
+          background-image: url('{{(editMode ? editPost.coverLarge : post.coverLarge) || '/public/wiki/default-article.jpg'}}')"
+        ></div>
+        <h1>{{post.title}}</h1>
+        <div class="wiki-post-old-title">{{oldTitle}}</div>
+        <textarea
+          class="wiki-post-title-input"
+          placeholder="{{_('Title')}}"
+          value="{{editPost.title}}"
+        ></textarea>
+
+        <div class="wiki-post-title-cover-button">
+          <div on-click="changeCover()">
+            <i class="fa fa-picture-o"></i>
+          </div>
+        </div>
+
+        <div class="wiki-post-permalink {{editMode && !createMode ? 'show' : ''}}">
+          <span>{{_('Permalink:')}}</span> <span class="wiki-post-permalink-url">{{currentPath}}</span><input class="wiki-post-permalink-input" value="{{editPost.url}}" spellcheck="false" />
+        </div>
+      </header>
+
+      {{#if haspost}}
+
+      {{#if post.lastUpdatedDate}}
+      <div class="wiki-post-print-date">{{post.lastUpdatedDate}}</div>
+      {{/if}}
+
+      <div class="wiki-post-print-summary">
+        <h2>{{_('Summary')}}</h2>
+
+        <ul>
+          {{#post.summary}}
+            <li class="summary-{{type}} {{lastChild ? 'last-child' : ''}}"><span>{{{title}}}</span></li>
+          {{/post.summary}}
+        </ul>
+      </div>
+
+      <div class="wiki-post-actions-space-back"></div>
+
+      <div class="wiki-post-actions-space">
+        <div class="wiki-post-actions-container">
+          <div class="wiki-post-actions-bar"></div>
+
+          <div class="wiki-post-edit-label">
+            <span>{{_('editing')}}</span>
+          </div>
+
+          <div
+            class="
+              wiki-post-actions
+              {{editConfirm}}
+              {{network ? '' : 'network-broken'}}
+              {{emojiAdded.opened ? 'emoji-added' : ''}}
+              {{alreadyLocked ? 'already-locked' : ''}}
+            "
+          >
+            <div class="wiki-post-actions-section view {{disableEdition ? 'disable' : ''}}">
+              {{#if post.locked}}
+              <span class="locked {{lockedEdited ? 'locked-edited' : ''}}">
+                <img src="{{displayAvatar(post.locked.avatarMini)}}" />
+                <strong class="user">{{post.locked.username}}</strong>
+                <span class="locked-texts">
+                  <span class="locked-text-editing">{{_('is editing...')}}</span>
+                  <span class="locked-text-edited">{{_('has updated!')}}</span>
+                </span>
+              </span>
+              {{elseif accessWrite}}
+              <span on-click="editPost()" class="wiki-post-action-edit {{editBack ? 'edit-back' : ''}} {{network ? '' : 'wiki-post-action-edit-disabled'}}">
+                {{_(network ? 'edit' : 'Edit is disabled, trying to reconnect to the network.')}}
+              </span>
+              {{/if}}
+            </div>
+            <div class="wiki-post-actions-section edition">
+              <select class="wiki-post-select-status {{editPost.status}}" value="{{editPost.status}}">
+                <option value="published">{{_('published')}}</option>
+                <option value="draft">{{_('draft')}}</option>
+                <option value="obsolete">{{_('obsolete')}}</option>
+              </select>
+              <span
+                class="save {{hasModifications ? 'can-save' : ''}} {{saving ? 'saving' : ''}}"
+                on-click="savePost()"
+              >{{_(saving ? 'saving' : (!hasModifications ? 'saved' : 'save'))}}</span>
+              |
+              <span class="close {{saving ? 'close-disabled' : ''}}" on-click="cancelEditPost()">
+                {{hasModifications ? _('cancel') : _('close')}}
+              </span>
+              {{#if !createMode}}
+              |
+              <span class="delete" on-click="askDeletePost()">{{_('delete')}}</span>
+              {{/if}}
+            </div>
+
+            <div class="wiki-post-actions-section network-broken-text">
+              <span class="text">{{_('Save is disabled, trying to reconnect to the network.')}}</span> |
+              <span class="confirm" on-click="cancelEditPost()">{{_('close without saving')}}</span>
+            </div>
+
+            <div class="wiki-post-actions-section emoji-added-text">
+              <img src="{{displayAvatar(emojiAdded.avatarMini)}}" />
+              <strong class="user">{{emojiAdded.username}}</strong>
+              {{_('just reacted')}}
+              <div class="emoji-icon emoji-{{emojiAdded.emoji}}"></div>
+            </div>
+
+            <div class="wiki-post-actions-section already-locked-text">
+              <span class="text">
+                <span class="already-locked-icon">!</span>
+                {{_('Pay attention, ')}}
+                <img src="{{displayAvatar(alreadyLocked.avatarMini)}}" />
+                <strong>{{alreadyLocked.user}}</strong>
+                {{_(' has locked the article')}}</span> |
+              <span class="confirm" on-click="cancelEditPost()">{{_('close without saving')}}</span>
+            </div>
+
+            <div class="wiki-post-actions-section delete-confirm">
+              {{
+                tryDeletedArticleLinkedCount == 0 ? _('This action cannot be undone:') :
+                (tryDeletedArticleLinkedCount == 1 ? _('An article is linked to this one:') :
+                tryDeletedArticleLinkedCount + _(' articles are linked to this one:'))
+              }}
+              <span class="confirm" on-click="deletePost()">{{_('confirm')}}</span>
+              |
+              <span on-click="cancelAskDeletePost()">{{_('cancel')}}</span>
+            </div>
+            <div class="wiki-post-actions-section close-confirm">
+              {{_('You will lose your unsaved work:')}}
+              <span class="confirm" on-click="cancelEditPost(true)">{{_('confirm')}}</span>
+              |
+              <span on-click="cancelAskClosePost()">{{_('cancel')}}</span>
+            </div>
+            <div class="wiki-post-actions-section error-alert">
+              {{saveError}}
+            </div>
+          </div>
+        </div>
+      </div>
+      {{/if}}
+
+      <div class="wiki-post-switch-container">
+
+        {{#if haspost}}
+        <section class="wiki-post-headband {{activeStatus()}}">
+          {{#if activeStatus() != 'published'}}
+          <i class="wiki-post-headband-icon {{activeStatus() == 'obsolete' ? 'fa fa-calendar-times-o' : 'fa fa-pencil'}}"></i>
+          <div class="wiki-post-headband-content">
+            <h2>{{_(activeStatus() == 'obsolete' ? 'This article is obsolete!' : 'This article is a draft!')}}</h2>
+            <p>{{_(activeStatus() == 'obsolete' ?
+              'Be careful, its content may not be relevant anymore.' :
+              'It is a work in progress, it may be incomplete.'
+            )}}<p>
+            <p>{{_('Even in this mode, this article is visible by anyone who has access to the wiki.')}}
+            </p>
+          </div>
+          {{/if}}
+        </section>
+        {{/if}}
+
+        {{#if post.in404}}
+        <section class="wiki-post-headband not-exists">
+          <i class="wiki-post-headband-icon fa fa-sticky-note-o"></i>
+          <div class="wiki-post-headband-content">
+            <h2>{{_('This article doesn\'t exists for now.')}}</h2>
+            <p>{{_('Possible reasons:')}}</p>
+            <ul>
+              <li>{{_('The article has never been created but some links are waiting to do.')}}</li>
+              <li>{{_('The article has been deleted.')}}</li>
+            </ul>
+          </div>
+        </section>
+        {{/if}}
+
+        <div class="wiki-post-content {{contentHide ? 'hide' : ''}} {{displayContent ? 'display-content' : ''}}">
+          {{{post.content}}}
+
+          {{#if post.inError}}
+          <h2 class="error">{{_('Oops. We have trouble finding this article.')}}</h2>
+          <p class="error">{{_('We keep on trying anyway, no need to refresh your page.')}}</p>
+          <p class="error">{{_('More informations:')}} {{post.error}}</p>
+          {{/if}}
+
+          {{#if post.in404}}
+          {{#if accessWrite}}
+          <table id="__mcenew" class="text-templates text-templates-info" width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tbody>
+              <tr>
+                <td>
+                  <span class="fa fa-info-circle text-templates-icon"></span>
+                  <p>{{_('If you want you can directly')}} <a href="/wiki/{{post.url}}/edit">{{_('create it with this URL')}}</a>.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          {{/if}}
+
+          {{#if searchPosts.length}}
+          <p>{{_('Maybe are you looking for one of these?')}}</p>
+          {{/if}}
+
+          {{#searchPosts}}
+          <a
+            href="/wiki/{{url}}"
+            class="wiki-post-search-post"
+            style="background-image: url('{{coverThumb || '/public/wiki/default-article.jpg'}}');"
+          >
+            <span class="wiki-post-search-post-content">
+              <h3>{{title}}</h3>
+              <span class="description">{{{description}}}</span>
+            </span>
+          </a>
+          {{/searchPosts}}
+
+          {{/if}}
+
+          {{#if post.wasInError}}
+          <h2 class="success">{{_('Everything\'s ok. We found your article.')}}</h2>
+          {{/if}}
+        </div>
+
+        <rv-require
+          name="texteditor"
+          src="/public/texteditor/texteditor"
+          class="wiki-post-texteditor {{editorShow ? 'show' : ''}} {{editorShowLoading ? 'loading' : ''}}"
+          ondemand="texteditor"
+
+          data-placeholder="{{_('Compose your beautiful article...')}}"
+          data-plugins="wikilink emojis"
+          data-toolbarremove="link"
+          data-toolbaradd="wikilink=1:18"
+        ></rv-require>
+
+        <div
+          class="wiki-post-emojis-menu {{emojiMenuOpened}}"
+          style="bottom: {{emojiMenuBottom}}px; left: {{emojiMenuLeft}}px;"
+        >
+          <h2 class="pl-title">{{_('Reaction')}}</h2>
+          <div class="wiki-post-emojis-menu-content">
+            {{#EMOJIS:i}}
+              <button class="emoji-button emoji-{{icon}} {{i < 6 ? 'line-1' : ''}}" on-click="toggleEmoji">
+                <span>{{_(label)}}</span>
+              </button>
+            {{/EMOJIS}}
+          </div>
+        </div>
+      </div>
+
+    </article>
+  </div>
+</div>

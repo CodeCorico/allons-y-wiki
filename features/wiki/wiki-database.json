@@ -1,0 +1,7 @@
+{
+  "databases": [{
+    "type": "mongo",
+    "name": "WikiDigest",
+    "description": "Mongo database containing the Wiki public metrics."
+  }]
+}

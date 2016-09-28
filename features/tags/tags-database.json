@@ -1,0 +1,7 @@
+{
+  "databases": [{
+    "type": "mongo",
+    "name": "Tags",
+    "description": "Mongo database containing the tags used for the articles of allons-y-wiki."
+  }]
+}

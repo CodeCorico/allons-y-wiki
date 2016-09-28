@@ -1,0 +1,44 @@
+@import "web";
+
+.wiki-posts-list {
+  position: relative;
+  overflow: hidden;
+
+  &.wiki-posts-list-table {
+    display: flex;
+    flex-flow: row wrap;
+
+    [name="wiki-post-item"] {
+      flex: 0 0 auto;
+
+      .wiki-post-item, .wiki-post-item:hover, .wiki-post-item:visited {
+        height: 100%;
+      }
+    }
+  }
+
+  h2 {
+    .noselect();
+    position: relative;
+    color: white;
+    font-size: 1.6rem;
+    opacity: 0.3;
+    text-transform: uppercase;
+    padding: 2rem 3rem;
+    margin: 0;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-align: center;
+  }
+}
+
+.media-tablet, .media-mobile {
+
+  .wiki-posts-list {
+    &.wiki-posts-list-table {
+      [name="wiki-post-item"] {
+        width: 100% !important;
+      }
+    }
+  }
+}

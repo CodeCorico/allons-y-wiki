@@ -1,0 +1,75 @@
+<a
+  class="
+    wiki-post-item
+    {{template ? 'wiki-post-item-' + template : ''}}
+    {{(notransition && notransition == 'true') || show ? 'show' : ''}}
+    {{selected ? 'selected' : ''}}
+    {{cls ? cls : ''}}
+    {{(!nolocked || nolocked != 'true') && post.locked ? 'edited-by' : ''}}
+  "
+  style="{{
+    !template || template != 'white' ?
+      'background-image: url(\'' + (post.coverThumb || '/public/wiki/default-article.jpg') + '\');' :
+      ''
+  }}"
+  href="/wiki/{{post.url}}"
+  on-click="click"
+>
+  {{#if template == 'white'}}
+    <div
+      class="wiki-post-item-white-cover"
+      style="background-image: url('{{post.coverThumb || '/public/wiki/default-article.jpg'}}');"
+    ></div>
+  {{/if}}
+
+  {{#if (!nolocked || nolocked != 'true') && post.locked}}
+    <div
+      class="wiki-post-item-edited-by"
+      style="background-image: url('{{displayAvatar(post.locked.avatarThumbVertical)}}');"
+      title="{{post.locked.username}} {{_('is editing')}}"
+    ></div>
+  {{/if}}
+
+  {{#if (!nostatus || nostatus != 'true') && post.status != 'published'}}
+    <span class="wiki-post-item-status wiki-post-item-status-{{post.status}}">{{post.status}}</span>
+  {{/if}}
+
+  {{#if !notitle || notitle != 'true'}}
+    <span class="wiki-post-item-title">{{{post.title}}}</span>
+  {{/if}}
+
+  {{#if !noviews || noviews != 'true'}}
+    <span class="wiki-post-item-views">{{post.views}} {{_(post.views > 1 ? 'views' : 'view')}}</span>
+  {{/if}}
+
+  {{#if (!nodescription || nodescription != 'true') && post.description}}
+    <span class="wiki-post-item-summary">{{{post.description}}}</span>
+  {{/if}}
+
+  {{#if !nocontributors || nocontributors != 'true'}}
+  <div class="wiki-post-item-contributors {{post.contributors.length ? 'show' : ''}}">
+    {{#post.contributors}}
+      <a href="/members/{{url}}" title="{{_('Contributor')}} {{username}}">
+        <img src="{{displayAvatar(avatarMini)}}" alt="{{username}}" />
+      </a>
+    {{/post.contributors}}
+  </div>
+  {{/if}}
+
+  {{#if !noemojis || noemojis != 'true'}}
+    <div class="wiki-post-item-emojis {{post.displayEmojis.length ? 'show' : ''}}">
+      {{#post.displayEmojis}}
+        <span class="emoji-icon emoji-{{icon}}" title="{{count}} {{_(label)}}"></span>
+      {{/post.displayEmojis}}
+      {{post.emojis.total ? post.emojis.total : ''}}
+    </div>
+  {{/if}}
+
+  <div class="clear"></div>
+
+  {{> wiki-post-item-extend}}
+
+  {{#if post.emojisAdding}}
+    <span class="emoji-adding emoji-{{post.emojisAdding.icon}} {{post.emojisAdding.status}}"></span>
+  {{/if}}
+</a>

@@ -1,0 +1,194 @@
+<div class="pl-section wiki-details-tabs">
+  {{#tabs}}
+  <div
+    class="tab-{{name}} {{tabSelected == name ? 'selected' : ''}}"
+    title="{{_(title)}}"
+    on-click="goToTab(name)"
+  ><i class="{{icon}}"></i></div>
+  {{/tabs}}
+</div>
+
+<div class="wiki-details">
+
+  <rv-require name="pl-scrolls" src="/public/vendor/plumes/scrolls/pl-scrolls"></rv-require>
+
+  <div class="pl-scrolls">
+
+    <div class="wiki-details-section {{!post ? 'opened' : ''}}">
+      <section class="pl-section">
+        <div class="wiki-details-content wiki-details-nothing">
+          {{_('No article details.')}}
+        </div>
+      </section>
+    </div>
+    <div class="wiki-details-section {{post ? 'opened' : ''}}">
+      <section class="pl-section s-summary">
+        <h2 class="pl-title">{{_('Summary')}}</h2>
+
+        {{#partial summary-item}}
+          <li
+            class="
+              wiki-details-summary-{{type}}
+              {{lastChild ? 'last-child' : ''}}
+              {{titleSelected == name ? 'selected' : ''}}
+            "
+          ><a href="#{{name}}" on-click="scrollToAnchor">{{{title}}}</a></li>
+        {{/partial}}
+
+        <ul class="wiki-details-content wiki-details-summary {{editMode ? 'hide' : ''}}">
+          {{#post.summary}}
+            {{> summary-item}}
+          {{/post.summary}}
+        </ul>
+
+        <ul class="wiki-details-content wiki-details-summary wiki-details-summary-edit {{!editMode ? 'hide' : ''}}">
+          {{#editSummary}}
+            {{> summary-item}}
+          {{/editSummary}}
+        </ul>
+      </section>
+      <section class="pl-section s-backposts">
+        <h2 class="pl-title">{{_('Mentioned in')}}</h2>
+
+        {{#if !post.backposts.length}}
+          <p class="wiki-details-nothing">{{_('Nowhere.')}}</p>
+        {{/if}}
+
+        {{#post.backposts}}
+          <a
+            href="/wiki/{{url}}"
+            class="wiki-details-post"
+            style="background-image: url('{{coverThumb || '/public/wiki/default-article.jpg'}}');"
+            on-click="goBackPost"
+          >
+            <span class="wiki-details-post-content">
+              <h3>{{title}}</h3>
+              <span class="description">{{{description}}}</span>
+            </span>
+          </a>
+        {{/post.backposts}}
+      </section>
+      <section class="pl-section s-tags">
+        <h2 class="pl-title">{{_('Tags')}}</h2>
+
+        <div class="wiki-details-content wiki-details-tags {{editMode ? 'wiki-details-tags-edit' : ''}}">
+          {{#if emptyTags && !editMode}}
+            <p class="wiki-details-nothing">{{_('None for the time being.')}}</p>
+          {{else}}
+            {{#tags}}
+              {{#if hasTags || editMode}}
+                <h3>{{name}}</h3>
+
+                {{#this.masterTags}}
+                  <h4 class="{{this.delete ? 'delete' : ''}}" title="{{_('Family tag')}}">
+                    {{this.name}}
+                    <span class="wiki-details-tags-remove" on-click="removeTag" title="{{_('Remove family tag')}}">
+                      <i class="wiki-details-tags-cross"></i>
+                    </span>
+                  </h4>
+
+                  <div class="wiki-details-tags-list {{this.delete ? 'delete' : ''}}">
+                    {{#this.tags}}
+                      <span class="wiki-details-tag {{this.delete ? 'delete' : ''}}" title="{{_('Tag')}}">
+                        {{this.name}}
+                        <span class="wiki-details-tags-remove" on-click="removeTag" title="{{_('Remove tag')}}">
+                          <i class="wiki-details-tags-cross"></i>
+                        </span>
+                      </span>
+                    {{/this.tags}}
+
+                    {{#if editMode}}
+
+                    <rv-require
+                      name="pl-autocomplete"
+                      src="/public/vendor/plumes/autocomplete/pl-autocomplete"
+
+                      data-keypath="{{@keypath + '.tags'}}"
+
+                      data-placeholder="{{_('New tag')}}"
+                      data-cls="wiki-details-tags-autocomplete"
+                      data-selectioncls="wiki-details-tags-autocomplete-selection"
+                      data-inputcls="wiki-details-tags-autocomplete-input"
+                      data-listcls="wiki-details-tags-autocomplete-list"
+                      data-bind-keydown="tagsKeydown"
+                      data-bind-focus="tagsFocus"
+                      data-bind-blur="tagsBlur"
+                      data-bind-change="tagsChange"
+                      data-bind-select="tagsSelect"
+                    ></rv-require>
+                    {{/if}}
+                  </div>
+                {{/this.masterTags}}
+
+                {{#if editMode}}
+                <div class="{{this.hasTags ? '' : 'no-tags'}}">
+                  <rv-require
+                    name="pl-autocomplete"
+                    src="/public/vendor/plumes/autocomplete/pl-autocomplete"
+
+                    data-keypath="{{@keypath + '.masterTags'}}"
+                    data-ismaster="true"
+
+                    data-placeholder="{{_('New family tag')}}"
+                    data-cls="wiki-details-tags-autocomplete master"
+                    data-selectioncls="wiki-details-tags-autocomplete-selection"
+                    data-inputcls="wiki-details-tags-autocomplete-input"
+                    data-listcls="wiki-details-tags-autocomplete-list"
+                    data-bind-keydown="tagsKeydown"
+                    data-bind-focus="tagsFocus"
+                    data-bind-blur="tagsBlur"
+                    data-bind-change="tagsChange"
+                    data-bind-select="tagsSelect"
+                  ></rv-require>
+                </div>
+                {{/if}}
+              {{/if}}
+            {{/tags}}
+          {{/if}}
+        </div>
+      </section>
+      <section class="pl-section s-details">
+        <h2 class="pl-title">{{_('Details')}}</h2>
+
+        <div class="wiki-details-content">
+          {{#if post.createdDateAgo}}
+            <div title="{{_('created the')}} {{post.createdDate}} {{_('at')}} {{post.createdTime}}" class="wiki-post-creation">{{_('created')}} {{post.createdDateAgo}}</div>
+          {{/if}}
+          <div>{{post.views || 0}} views</div>
+          {{#if post.emojis && post.emojis.total}}
+            <div>{{post.emojis.total}} reactions</div>
+            <div class="emojis">
+            {{#EMOJIS}}
+              {{#if post.emojis[icon]}}
+              <span class="emoji-icon emoji-{{icon}}" title="{{_(label)}}"></span> {{post.emojis[icon]}}
+              {{/if}}
+            {{/EMOJIS}}
+            </div>
+          {{/if}}
+        </div>
+      </section>
+      <section class="pl-section s-contributors">
+        <h2 class="pl-title">{{_('Contributors')}}</h2>
+
+        {{#if !post.contributors.length}}
+          <p class="wiki-details-nothing">{{_('None for the time being.')}}</p>
+        {{/if}}
+
+        {{#post.contributors}}
+        <a
+          class="wiki-details-contributor"
+          on-click="selectContributor"
+          href="/members/{{url}}"
+          title="{{_('Updated ') + dateText}}"
+        >
+          <img src="{{displayAvatar(avatarThumbSquare)}}" />
+          <span class="wiki-details-contributor-date">{{dateAgo}}</span>
+          <span class="wiki-details-contributor-content">
+            {{username}}
+          </span>
+        </a>
+        {{/post.contributors}}
+      </section>
+    </div>
+  </div>
+</div>

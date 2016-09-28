@@ -1,0 +1,33 @@
+<section
+  class="
+    wiki-posts-list
+    {{template ? 'wiki-posts-list-' + template : ''}}
+    {{tablecols ? 'wiki-posts-list-table' : ''}}
+  "
+>
+  {{#posts}}
+    {{#if sectionTitle}}
+      <h2>{{_(sectionTitle)}}</h2>
+    {{/if}}
+
+    <rv-require
+      name="wiki-post-item"
+      src="/public/wiki/wiki-post-item"
+      style="{{tablecols ? 'width: ' + (100 / tablecols) + '%;' : ''}}"
+
+      data-bind-cls="itemcls"
+      data-bind-notransition="notransition"
+      data-bind-nolocked="nolocked"
+      data-bind-notitle="notitle"
+      data-bind-noviews="noviews"
+      data-bind-nostatus="nostatus"
+      data-bind-nodescription="nodescription"
+      data-bind-nocontributors="nocontributors"
+      data-bind-noemojis="noemojis"
+      data-bindparent-template="template"
+      data-bindparent-post="posts.{{@index}}"
+      data-index="{{@index}}"
+      data-on-click="click"
+    ></rv-require>
+  {{/posts}}
+</section>

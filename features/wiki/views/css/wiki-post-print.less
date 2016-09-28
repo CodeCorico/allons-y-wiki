@@ -1,0 +1,164 @@
+@import "web";
+
+.talentforcepedia-layout {
+  position: relative !important;
+}
+
+.wiki-post-container {
+  position: relative !important;
+  overflow: visible !important;
+
+  .pl-scrolls {
+    position: relative !important;
+    margin-right: 0 !important;
+    overflow: visible !important;
+  }
+}
+
+.wiki-post {
+  position: relative !important;
+  overflow: visible !important;
+
+  header {
+    min-height: 0 !important;
+    padding: 2rem 0 0 0 !important;
+
+    h1 {
+      color: #333 !important;
+      padding: 4rem 0 1rem !important;
+      margin: 0 !important;
+      font-size: 5rem !important;
+      min-height: 0 !important;
+    }
+  }
+
+  .wiki-post-print-date {
+    display: block !important;
+    color: #eee;
+    text-align: center;
+    font-size: 1rem;
+    margin-bottom: 3rem;
+  }
+
+  .wiki-post-print-summary {
+    display: block !important;
+    padding: 0 3rem 3rem;
+
+    h2 {
+      font-size: 3.2rem;
+    }
+
+    li {
+      list-style-type: square;
+      margin-bottom: 0;
+      font-size: 1.4rem;
+
+      &.last-child {
+        margin-bottom: 1.5rem;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      span {
+        color: @accentColor;
+      }
+
+      &.summary-h1 {
+        text-transform: uppercase;
+      }
+
+      &.summary-h2 {
+        padding-left: 1.5rem;
+      }
+
+      &.summary-h3 {
+        padding-left: 3rem;
+      }
+
+      &.summary-h4 {
+        padding-left: 4.5rem;
+      }
+    }
+  }
+
+  .wiki-post-actions-space-back, .wiki-post-actions-space {
+    display: none !important;
+  }
+
+  .wiki-post-switch-container {
+    padding-top: 0 !important;
+  }
+
+  .wiki-post-headband {
+    width: auto;
+    color: #ccc !important;
+    font-size: 1.5rem !important;
+
+    .wiki-post-headband-icon {
+      left: 0 !important;
+    }
+
+    .wiki-post-headband-content {
+      left: 3rem !important;
+    }
+  }
+
+  .wiki-post-content {
+    width: auto !important;
+
+    p, label, ul, ol, ul ul, ul ol, ol ol, ol ul, li, th, td {
+      font-size: 1.5rem !important;
+    }
+
+    blockquote {
+      background: transparent !important;
+    }
+  }
+
+  .wiki-post-contributors-container {
+    display: none !important;
+  }
+
+  .mceCover {
+    display: none !important;
+  }
+
+  .mce-pagebreak {
+    display: block;
+    page-break-before: always;
+  }
+
+  .ps-scrollbar-x-rail, .ps-scrollbar-y-rail {
+    display: none !important;
+  }
+
+  .text-templates-info {
+    color: #81C6F8;
+  }
+
+  .text-templates-success {
+    color: #9AD29D;
+  }
+
+  .text-templates-warning {
+    color: #FFB074;
+  }
+
+  .text-templates-alert {
+    color: #FA9792;
+  }
+
+  blockquote {
+    &:before, &:after {
+      font-size: 8rem !important;
+      line-height: 16rem !important;
+      opacity: 0.5;
+    }
+
+    &:after {
+      line-height: 8rem !important;
+    }
+  }
+}
