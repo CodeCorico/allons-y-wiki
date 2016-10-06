@@ -9,15 +9,15 @@ module.exports = [{
   ],
 
   enter: [
-    '$Page', '$i18nService', '$BodyDataService', '$FaviconService', '$Layout', '$context',
-  function($Page, $i18nService, $BodyDataService, $FaviconService, $Layout, $context) {
+    '$Page', '$i18nService', '$BodyDataService', '$FaviconService', '$Layout', '$context', '$next',
+  function($Page, $i18nService, $BodyDataService, $FaviconService, $Layout, $context, $next) {
     var isWikiHomeUrl = /^\/wiki\/?$/.test($context.path),
         user = $BodyDataService.data('user'),
         hasWikiAccess = user.permissionsPublic.indexOf('wiki-access') > -1,
         hasWikiWrite = user.permissionsPublic.indexOf('wiki-write') > -1;
 
     if (!hasWikiAccess) {
-      return window.page.redirect('/');
+      return $next();
     }
 
     document.title = $i18nService._('Wiki') + ' - ' + $Page.get('web').brand;
@@ -66,8 +66,6 @@ module.exports = [{
             );
           })
           .then(function() {
-            WikiService.startRoute($Layout.get('screen') == 'screen-desktop');
-
             var pathArray = $context.path.split('/'),
                 hash = $context.pathname.split('#'),
                 lastDir = pathArray.pop(),
@@ -88,12 +86,8 @@ module.exports = [{
               $Page.rightButtonAdd('wiki-details', {
                 icon: 'fa fa-file-text',
                 group: 'group-wiki-details',
-                ready: function(button) {
-                  WikiService.detailsButtonReady(button);
-                },
+                autoOpen: /^\/wiki\//,
                 beforeGroup: function(context, $group, userBehavior, callback) {
-                  WikiService.registerDetailsEvents(context);
-
                   context.require('wiki-details').then(callback);
                 }
               });

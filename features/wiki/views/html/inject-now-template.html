@@ -1,0 +1,14 @@
+{{#partial postTemplate}}
+  <rv-require
+    name="wiki-post-item"
+    src="/public/wiki/wiki-post-item"
+
+    data-template="now"
+    data-nostatus="true"
+    data-noviews="true"
+    data-nocontributors="true"
+    data-bindparent-post="activities.{{@index}}"
+    data-index="{{@index}}"
+    data-on-click="click"
+  ></rv-require>
+{{/partial}}

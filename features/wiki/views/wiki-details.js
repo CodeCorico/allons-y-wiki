@@ -199,9 +199,6 @@
                 _stopScroll = false;
               });
             }
-
-            WikiService.updateWinChartCount('detailsTab');
-            WikiService.updateWinChartCount(tab + 'DetailsTab');
           }
         }),
         _stopScroll = false,
@@ -228,15 +225,7 @@
       WikiService.fire('hasModifications');
     }
 
-    WikiDetails.on('goBackPost', function() {
-      _closeOnNotDesktop();
-
-      WikiService.updateWinChartCount('openArticleFromBackpost');
-    });
-
-    WikiDetails.on('selectContributor', function() {
-      WikiService.updateWinChartCount('selectWikiContributor');
-    });
+    WikiDetails.on('goBackPost', _closeOnNotDesktop);
 
     WikiDetails.on('removeTag', function(event) {
       WikiDetails.set(event.keypath + '.delete', true);
@@ -277,9 +266,7 @@
     });
 
     function _closeOnNotDesktop() {
-      if ($Layout.get('screen') != 'screen-desktop') {
-        $Layout.rightContext().closeIfGroupOpened('group-wiki-details');
-      }
+      $Layout.closeOnNotDesktop('group-wiki-details');
     }
 
     WikiDetails.on('scrollToAnchor', function(event) {
@@ -293,8 +280,6 @@
       _closeOnNotDesktop();
 
       WikiService.scrollToAnchor('#' + event.context.name.replace(/#/, ''));
-
-      WikiService.updateWinChartCount('clickWikiSummary');
     });
 
     WikiService.onAsyncSafe('wikiDetailsController.beforeSave', function(args, callback) {

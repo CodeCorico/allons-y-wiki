@@ -1,7 +1,7 @@
 module.exports = function() {
   'use strict';
 
-  DependencyInjection.model('PostModel', function($AbstractModel, $RealTimeService) {
+  DependencyInjection.model('PostModel', function($AbstractModel, $RealTimeService, $WebCreateService) {
 
     var PROTECTED_URLS = ['create'],
         PERMISSIONS = {
@@ -32,6 +32,10 @@ module.exports = function() {
           'wiki-post': {
             permissions: ['wiki-access']
           },
+          'wiki-post-locked': {
+            permissions: ['wiki-access'],
+            call: 'callPostLocked'
+          },
           'wiki-lastcreated': {
             permissions: ['wiki-access'],
             call: 'callLastCreatedPosts'
@@ -52,10 +56,6 @@ module.exports = function() {
             permissions: ['wiki-access'],
             call: 'callPostsOpened'
           },
-          'wiki-contributions': {
-            permissions: ['wiki-access'],
-            call: 'callContributions'
-          },
           'wiki-postscount': {
             permissions: ['wiki-access'],
             call: 'callPostsCount'
@@ -63,7 +63,23 @@ module.exports = function() {
           'wiki-reactionscount': {
             permissions: ['wiki-access'],
             call: 'callReactionsCount'
+          },
+          'wiki-contributions': {
+            permissions: ['wiki-access'],
+            call: 'callContributions'
+          },
+          'users-wiki-coworkers': {
+            call: 'callCoworkers'
           }
+        },
+        CREATE_LINKS = {
+          title: 'Wiki',
+          links: [{
+            url: '/wiki/create',
+            image: '/public/wiki/wiki-web-create-thumb.png',
+            title: 'Empty article',
+            description:  'Create a new empty article.'
+          }]
         },
         WIKI_HOME_EDIT_PATTERN = /^\/wiki\/(?!create\/?$).+?\/?$/,
 
@@ -297,7 +313,8 @@ module.exports = function() {
         init: function() {
           var _this = this,
               GroupModel = DependencyInjection.injector.model.get('GroupModel'),
-              EntityModel = DependencyInjection.injector.model.get('EntityModel');
+              EntityModel = DependencyInjection.injector.model.get('EntityModel'),
+              UserModel = DependencyInjection.injector.model.get('UserModel');
 
           GroupModel.registerPermissions(PERMISSIONS);
 
@@ -314,6 +331,30 @@ module.exports = function() {
           $RealTimeService.registerEvents(REALTIME_EVENTS);
 
           EntityModel.registerSearchPublicData('post', this, this.searchPublicData);
+
+          UserModel.onChangeAvatar(function(user, callback) {
+            _this.updateMember(user, function() {
+              callback();
+            });
+          });
+
+          $WebCreateService.links(function() {
+            _this.webCreateLinks.apply(this, arguments);
+          });
+        },
+
+        webCreateLinks: function(sockets, sections, callback) {
+          sockets.forEach(function(socket) {
+            if (!socket || !socket.user || !socket.user.id) {
+              return;
+            }
+
+            if (socket.user.hasPermission('wiki-write')) {
+              sections.push(CREATE_LINKS);
+            }
+          });
+
+          callback();
         },
 
         protectedUrls: function() {
@@ -584,6 +625,37 @@ module.exports = function() {
             .replace(/ +/g, ' ') || '';
         },
 
+        refreshPostLocked: function(post) {
+          this.callPostLocked(null, null, [post.id]);
+        },
+
+        callPostLocked: function($socket, eventName, args, callback) {
+          if (!args || !args.length) {
+            if (callback) {
+              callback();
+            }
+
+            return;
+          }
+
+          eventName = eventName || 'wiki-post-locked:' + args[0];
+
+          var $SocketsService = DependencyInjection.injector.model.get('$SocketsService'),
+              post = {
+                id: args[0]
+              };
+
+          this.populateLocked($SocketsService, $socket, post);
+
+          $RealTimeService.fire(eventName, {
+            post: post
+          }, $socket || null);
+
+          if (callback) {
+            callback();
+          }
+        },
+
         callLastByType: function(type, $socket, eventName, args, lockPostId, lockSocket, callback) {
           var _this = this,
               eventNamesCount = $RealTimeService.eventNamesFromCount('wiki-last' + type, 0, $socket);
@@ -697,7 +769,7 @@ module.exports = function() {
               UserModel = DependencyInjection.injector.model.get('UserModel'),
               $SocketsService = DependencyInjection.injector.model.get('$SocketsService');
 
-          function _fire(posts) {
+          function fire(posts) {
             sockets.forEach(function(socket) {
               $RealTimeService.fire(eventName, {
                 posts: posts
@@ -729,13 +801,17 @@ module.exports = function() {
 
           UserModel.fromSocket(sockets[0], function(err, user) {
             if (err || !user) {
-              return callback();
+              if (callback) {
+                callback();
+              }
+
+              return;
             }
 
             user.postsViewed = user.postsViewed || [];
 
             if (!user.postsViewed.length) {
-              return _fire([]);
+              return fire([]);
             }
 
             var postsViewedIds = user.postsViewed.map(function(postViewed) {
@@ -749,7 +825,11 @@ module.exports = function() {
               .limit(8)
               .exec(function(err, posts) {
                 if (err || !posts) {
-                  return callback();
+                  if (callback) {
+                    callback();
+                  }
+
+                  return;
                 }
 
                 posts = (posts || [])
@@ -768,7 +848,11 @@ module.exports = function() {
                   return indexA - indexB;
                 });
 
-                _fire(posts);
+                fire(posts);
+
+                if (callback) {
+                  callback();
+                }
               });
           });
         },
@@ -811,7 +895,8 @@ module.exports = function() {
             return;
           }
 
-          var UserModel = DependencyInjection.injector.model.get('UserModel'),
+          var _this = this,
+              UserModel = DependencyInjection.injector.model.get('UserModel'),
               eventNamesCount = $RealTimeService.eventNamesFromCount('wiki-contributions', 1, $socket, [args[0]]),
               contributions = [];
 
@@ -843,7 +928,7 @@ module.exports = function() {
                   return nextFunction();
                 }
 
-                selectedUser.populatePostsContributed(null, 'tileData', function(err, posts) {
+                _this.populateContributions(selectedUser, null, 'tileData', function(err, posts) {
                   if (err) {
                     return;
                   }
@@ -861,6 +946,35 @@ module.exports = function() {
                   callback();
                 }
               });
+            });
+        },
+
+        populateContributions: function(user, sort, outFormat, callback) {
+          this
+            .find({
+              id: user.postsContributed
+            })
+            .sort(sort ? sort : {
+              updatedAt: 'desc'
+            })
+            .exec(function(err, posts) {
+              if (err) {
+                return callback(err);
+              }
+
+              if (!posts || !posts.length) {
+                callback(null, []);
+              }
+
+              if (!outFormat) {
+                return callback(null, postsFetched);
+              }
+
+              var postsFetched = posts.map(function(post) {
+                return post[outFormat]();
+              });
+
+              callback(null, postsFetched);
             });
         },
 
@@ -939,6 +1053,124 @@ module.exports = function() {
           $RealTimeService.fire('wiki-post:' + post.id, extend(true, {
             post: post.tileData ? post.tileData() : post
           }, args || {}), socket || null);
+        },
+
+        refreshCoworkers: function(groupId, callback) {
+          this.callCoworkers(null, null, [groupId], callback);
+        },
+
+        callCoworkers: function($socket, eventName, args, callback) {
+          if (!args || args.length < 2) {
+            if (callback) {
+              callback();
+            }
+
+            return;
+          }
+
+          var _this = this,
+              UserModel = DependencyInjection.injector.model.get('UserModel'),
+              eventNamesCount = $RealTimeService.eventNamesFromCount('wiki-mostopened', 1, $socket, [args[0]]),
+              coworkers = [];
+
+          if (eventNamesCount === false) {
+            return;
+          }
+
+          UserModel
+            .findOne({
+              id: args[0]
+            })
+            .exec(function(err, selectedUser) {
+              if (err || !selectedUser) {
+                if ($socket) {
+                  $RealTimeService.fire(eventName, {
+                    error: 'not found'
+                  }, $socket);
+                }
+
+                if (callback) {
+                  callback();
+                }
+
+                return;
+              }
+
+              _this
+                .find({
+                  'contributors.id': selectedUser.id
+                }, {
+                  select: ['contributors']
+                })
+                .exec(function(err, postsContributed) {
+                  postsContributed = postsContributed || [];
+
+                  var coworkersIds = [],
+                      coworkersContributionsCount = {};
+
+                  postsContributed.forEach(function(post) {
+                    post.contributors.forEach(function(contributor) {
+                      if (contributor.id == selectedUser.id) {
+                        return;
+                      }
+
+                      if (coworkersIds.indexOf(contributor.id) < 0) {
+                        coworkersIds.push(contributor.id);
+                      }
+
+                      coworkersContributionsCount[contributor.id] = coworkersContributionsCount[contributor.id] || 0;
+                      coworkersContributionsCount[contributor.id]++;
+                    });
+                  });
+
+                  async.waterfall([function(nextFunction) {
+                    if (!coworkersIds.length) {
+                      return nextFunction();
+                    }
+
+                    UserModel
+                      .find({
+                        id: coworkersIds
+                      })
+                      .exec(function(err, users) {
+                        coworkers = (users || []).map(function(user) {
+                          return user.publicData({
+                            sameContributionsCount: coworkersContributionsCount[user.id]
+                          });
+                        });
+
+                        coworkers.sort(function(a, b) {
+                          return b.sameContributionsCount - a.sameContributionsCount;
+                        });
+
+                        nextFunction();
+                      });
+
+                  }], function() {
+
+                    if ($socket) {
+                      $RealTimeService.fire(eventName, {
+                        total: coworkers.length,
+                        users: coworkers
+                      }, $socket);
+                    }
+                    else {
+                      Object.keys(eventNamesCount.eventNames).forEach(function(eventName) {
+                        $RealTimeService.fire(eventName, {
+                          total: coworkers.length,
+                          users: !eventNamesCount.eventNames[eventName].count ?
+                            coworkers :
+                            coworkers.slice(0, eventNamesCount.eventNames[eventName].count)
+                        });
+                      });
+                    }
+
+                    if (callback) {
+                      callback();
+                    }
+                  });
+                });
+            });
         },
 
         updateMember: function(user, callback) {
@@ -1066,6 +1298,122 @@ module.exports = function() {
           }
 
           return post;
+        },
+
+        nowPostUpdate: function(postPublicData, member, type, args) {
+          var _this = this,
+              $NowService = DependencyInjection.injector.model.get('$NowService'),
+              GroupModel = DependencyInjection.injector.model.get('GroupModel'),
+              EntityModel = DependencyInjection.injector.model.get('EntityModel'),
+              UserModel = DependencyInjection.injector.model.get('UserModel'),
+              unknownUser = null;
+
+          async.waterfall([function(next) {
+
+            GroupModel.unknownPermissions(function(permissions) {
+
+              if (permissions.permissions.indexOf('wiki-access') < 0) {
+                return next();
+              }
+
+              EntityModel
+                .findOne({
+                  entityType: 'userUnknownNow'
+                })
+                .exec(function(err, userUnknownNow) {
+                  if (err || !userUnknownNow) {
+                    return next();
+                  }
+
+                  unknownUser = userUnknownNow;
+
+                  next();
+                });
+            });
+
+          }], function() {
+
+            UserModel
+              .find({
+                permissions: 'wiki-access'
+              })
+              .exec(function(err, users) {
+                if (err || !users || !users.length) {
+                  return;
+                }
+
+                if (unknownUser) {
+                  users.push(unknownUser);
+                }
+
+                postPublicData.activityType = 'post';
+                postPublicData.referenceId = postPublicData.id;
+                postPublicData.postId = postPublicData.id;
+
+                delete postPublicData.id;
+                delete postPublicData.search1;
+                delete postPublicData.search2;
+                delete postPublicData.search2;
+                delete postPublicData.tags;
+                delete postPublicData.content;
+                delete postPublicData.locked;
+                delete postPublicData.links;
+                delete postPublicData.linksPosts;
+                delete postPublicData.redirections;
+                delete postPublicData.summary;
+                delete postPublicData.contributors;
+
+                postPublicData.activityPostType = type;
+
+                if (type == 'create') {
+                  postPublicData.activityStatus = 'has published';
+                }
+                else if (type == 'delete') {
+                  postPublicData.activityStatus = 'has deleted';
+                }
+                else if (type == 'update') {
+                  postPublicData.activityStatus = 'has updated';
+                }
+                else if (type == 'status') {
+                  postPublicData.activityStatus = args[1] == 'published' ?
+                    'has removed the <strong>' + args[0] + '</strong> status' :
+                    'has added a <strong>' + args[1] + '</strong> status';
+                }
+                else if (type == 'emoji-added') {
+                  postPublicData.activityStatus = 'has reacted <span class="emoji-icon emoji-' + args + '"></span>';
+                }
+                else if (type == 'emoji-removed') {
+                  postPublicData.activityStatus = 'removes a <span class="emoji-icon emoji-' + args + '"></span>';
+                }
+                else if (type == 'views') {
+                  postPublicData.activityStatus =
+                    'has reached <strong>' + _this.viewsFormatted(postPublicData) + ' views</strong>';
+                }
+
+                if (member) {
+                  postPublicData.activityMember = {
+                    id: member.id,
+                    url: member.url,
+                    username: member.username,
+                    avatarMini: member.avatarMini
+                  };
+                }
+
+                $NowService.add(users, postPublicData, function(oldActivity, activity) {
+                  if (
+                    (type == 'update' || type == 'status') &&
+                    oldActivity.activityPostType && oldActivity.activityPostType == 'create' &&
+                    oldActivity.activityMember && activity.activityMember &&
+                    oldActivity.activityMember.id == activity.activityMember.id &&
+                    new Date().getTime() - new Date(oldActivity.createdAt).getTime() < 3600 * 24 * 1000
+                  ) {
+                    activity.activityDate = oldActivity.activityDate;
+                    activity.activityMember = oldActivity.activityMember;
+                    activity.activityStatus = oldActivity.activityStatus;
+                  }
+                });
+              });
+          });
         }
       };
 

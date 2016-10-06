@@ -1,0 +1,17 @@
+<h2 class="members-layout-title">{{(coworkersTotal || 0) + ' ' + _(coworkersTotal > 1 ? 'Coworkers' : 'Coworker')}}</h2>
+
+<div class="members-layout-section">
+   <rv-require
+    name="members-list"
+    src="/public/members/members-list"
+
+    data-type="wiki-coworkers"
+    data-count="all"
+    data-notransition="true"
+    data-bindparent-memberid="member.id"
+    data-bindchild-total="coworkersTotal"
+    data-on-membersloaded="sectionLoaded"
+  ></rv-require>
+
+  <div class="clear"></div>
+</div>

@@ -2,11 +2,11 @@
   'use strict';
 
   window.Ractive.controllerInjection('wiki-post', [
-    '$Page', '$Layout', '$i18nService', '$ShortcutsService', '$BodyDataService', 'HelpService',
+    '$Page', '$Layout', '$i18nService', '$ShortcutsService', '$BodyDataService', '$WebHelpService',
     'WikiService', 'webUrlFactory', 'postsSummaryFactory',
     '$component', '$data', '$done',
   function wikiPostController(
-    $Page, $Layout, $i18nService, $ShortcutsService, $BodyDataService, HelpService,
+    $Page, $Layout, $i18nService, $ShortcutsService, $BodyDataService, $WebHelpService,
     WikiService, webUrlFactory, postsSummaryFactory,
     $component, $data, $done
   ) {
@@ -116,19 +116,19 @@
     }
 
     function _linkHelp() {
-      HelpService.openHelp();
+      $WebHelpService.openHelp();
     }
 
     function _linkShortcuts() {
-      HelpService.openShortcuts();
+      $WebHelpService.openShortcuts();
     }
 
     function _linkFeedback() {
-      HelpService.openFeedback();
+      $WebHelpService.openFeedback();
     }
 
     function _linkChangelog() {
-      HelpService.openChangelog();
+      $WebHelpService.openChangelog();
     }
 
     function _linkProfile() {
@@ -389,10 +389,7 @@
           $this
             .attr('href', !isActualPost ? '/wiki/' + href : href)
             .removeAttr('data-post-id')
-            .removeAttr('data-anchor-id')
-            .on('click', function() {
-              WikiService.updateWinChartCount('openArticleFromInternalLink');
-            });
+            .removeAttr('data-anchor-id');
 
           if (isActualPost) {
             $this.click(function(event) {
@@ -537,7 +534,7 @@
 
       $actionsSpace.data('mousewheelBinded', true);
 
-      $.each(_mousewheelBinds, function(i, bind) {
+      _mousewheelBinds.forEach(function(bind) {
         $actionsSpace.on(bind, function(event) {
           var cloneEvent = new window.WheelEvent(bind, event.originalEvent);
 
@@ -561,8 +558,6 @@
     );
 
     function _changeCover(cover, coverLarge) {
-      WikiService.updateWinChartCount('wikiEditPostCover');
-
       WikiPost.set('editPost.cover', cover);
       WikiPost.set('editPost.coverLarge', coverLarge);
 
@@ -642,10 +637,6 @@
           }
         });
 
-        Texteditor.editor.on('updateWinChartCount', function(args) {
-          WikiService.updateWinChartCount(args.feature);
-        });
-
         _texteditorRequired = true;
 
         if (callback) {
@@ -699,8 +690,6 @@
       askDeletePost: function() {
         var id = WikiPost.get('editPost.id');
         WikiService.tryDelete(id);
-
-        WikiService.updateWinChartCount('wikiAskDeletePost');
       },
 
       cancelAskDeletePost: function() {
@@ -777,8 +766,6 @@
 
         WikiPost.set('editConfirm', '');
 
-        WikiService.updateWinChartCount('cancelEditPost');
-
         var editConfirmCallback = WikiPost.get('editConfirmCallback');
         WikiPost.set('editConfirmCallback', null);
         WikiPost.set('editCancelCallback', null);
@@ -823,8 +810,6 @@
 
       deletePost: function() {
         _deletePost();
-
-        WikiService.updateWinChartCount('wikiDeletePost');
       },
 
       changeCover: function() {

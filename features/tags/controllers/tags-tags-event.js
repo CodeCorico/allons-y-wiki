@@ -4,7 +4,7 @@ module.exports = [{
 
   event: 'call(tags/tags.autocomplete)',
   permissions: ['wiki-access', 'wiki-write'],
-  controller: function(TrackerService, $socket, $message, TagModel) {
+  controller: function($socket, $message, TagModel) {
     if (!this.validMessage($message, {
       name: ['string', 'filled']
     })) {

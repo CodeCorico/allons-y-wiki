@@ -17,7 +17,7 @@ module.exports = function() {
       };
 
       var _this = this,
-          _platform = $BodyDataService.data('platform'),
+          _web = $BodyDataService.data('web'),
           _printRequired = false,
           _mode = this.MODES.NONE,
           _isHome = false,
@@ -31,15 +31,11 @@ module.exports = function() {
           _hasModifications = false,
           _createPostForceUrl = null,
           _shortcutsGroup = $i18nService._('In the Wiki app'),
-          _routeStarted = false,
-          _routeStartedDesktop = false,
           _titleSelected = null,
           _editSummary = null,
           _editSummaryTitle = null,
           _autocompleteTagsActive = false,
-          _inWikiHome = false,
-          _detailsButton = null,
-          _detailsEventsRegistered = false;
+          _inWikiHome = false;
 
       this.onSafe('WikiService.init', function() {
         _mode = _this.MODES.NONE;
@@ -113,92 +109,6 @@ module.exports = function() {
 
       this.shortcutsGroup = function() {
         return _shortcutsGroup;
-      };
-
-      this.startRoute = function(isDesktop) {
-        _routeStarted = true;
-        _routeStartedDesktop = isDesktop;
-      };
-
-      this.detailsButtonReady = function(detailsButton) {
-        _detailsButton = detailsButton;
-      };
-
-      this.endRoute = function(type) {
-        if (!_routeStarted || !_routeStartedDesktop) {
-          return;
-        }
-
-        if (type == 'select' || type == 'edit' || type == 'create') {
-          var $Layout = DependencyInjection.injector.view.get('$Layout'),
-              uiCookie = window.Cookies.getJSON('ui') || {};
-
-          uiCookie.wikiDetails = uiCookie.wikiDetails || 'opened';
-
-          if (uiCookie.wikiDetails == 'opened' && $Layout.get('screen') == 'screen-desktop') {
-            this.fireDetailsButton();
-          }
-        }
-
-        _routeStarted = false;
-      };
-
-      this.registerDetailsEvents = function(context) {
-        if (_detailsEventsRegistered) {
-          return;
-        }
-        _detailsEventsRegistered = true;
-
-        context.on('open', function(args) {
-          var $context = $(context.el),
-              $group = $context.find('.pl-group.opened');
-
-          if (args.userBehavior && $group && $group.length && $group.attr('data-group') == 'group-wiki-details') {
-            var uiCookie = window.Cookies.getJSON('ui') || {};
-
-            delete uiCookie.wikiDetails;
-
-            window.Cookies.set('ui', uiCookie, {
-              expires: 365,
-              path: '/'
-            });
-          }
-        });
-
-        context.on('beforeCloseContent', function(args) {
-          var $context = $(context.el),
-              $group = $context.find('.pl-group.opened');
-
-          if (args.userBehavior && $group && $group.length && $group.attr('data-group') == 'group-wiki-details') {
-            var uiCookie = window.Cookies.getJSON('ui') || {};
-
-            uiCookie.wikiDetails = 'closed';
-
-            window.Cookies.set('ui', uiCookie, {
-              expires: 365,
-              path: '/'
-            });
-          }
-
-        });
-      };
-
-      this.fireDetailsButton = function(tries) {
-        tries = tries || 0;
-
-        if (!_detailsButton) {
-          tries++;
-
-          if (tries < 500) {
-            setTimeout(function() {
-              _this.fireDetailsButton(tries);
-            }, 10);
-          }
-
-          return;
-        }
-
-        _detailsButton.action(false);
       };
 
       $socket.on('disconnect', function() {
@@ -287,7 +197,7 @@ module.exports = function() {
         if (args.selected && args.post && args.post.title) {
           var letters = /([a-z])/gi.exec(args.post.title);
 
-          document.title = args.post.title + $i18nService._(' - ' + _platform.brand);
+          document.title = args.post.title + $i18nService._(' - ' + _web.brand);
 
           var favicon = '/public/wiki/favicon.png';
 
@@ -401,8 +311,6 @@ module.exports = function() {
         }
 
         _this.fire('home');
-
-        _this.endRoute('home');
       };
 
       this.closeHome = function() {
@@ -422,8 +330,6 @@ module.exports = function() {
         else if (mode == _this.MODES.SELECT) {
           _callPost(id, mode);
         }
-
-        _this.endRoute(mode == _this.MODES.EDIT ? 'edit' : 'select');
       };
 
       this.enterHash = function(hash) {
@@ -484,8 +390,6 @@ module.exports = function() {
         }
 
         _this.fire('createMode');
-
-        _this.endRoute('create');
       };
 
       this.savePost = function(post, enterUrl, callback) {

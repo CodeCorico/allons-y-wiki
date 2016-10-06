@@ -42,6 +42,7 @@
             displayAvatar: $Page.get('avatar')
           }, $data)
         }),
+        _updateActivityDateTimeout = null,
         _realtimeComponent = 'wikiPostItemController' + WikiPostItem.get('componentId'),
         _realtimeListEvent = null,
         _lastId = null;
@@ -91,8 +92,36 @@
       });
     }
 
+    function _updateActivityDate(post, update) {
+      if (post.activityDate) {
+        post.activityDateString = window
+          .moment(post.activityDate)
+          .fromNow(true)
+          .replace('an hour', '1 h')
+          .replace('a minute', '1 min')
+          .replace(/hours?/, 'h')
+          .replace(/minutes?/, 'min');
+
+        if (update) {
+          WikiPostItem.set('post.activityDateString', post.activityDateString);
+        }
+
+        clearTimeout(_updateActivityDateTimeout);
+
+        _updateActivityDateTimeout = setTimeout(function() {
+          if (!WikiPostItem) {
+            return;
+          }
+
+          _updateActivityDate(WikiPostItem.get('post'), true);
+        }, 60000);
+      }
+    }
+
     function _formatPost(args) {
       args.post.locked = args.post.locked || null;
+
+      _updateActivityDate(args.post);
 
       if (!WikiPostItem.get('noemojis') || WikiPostItem.get('noemojis') != 'true') {
         var displayEmojis = _displayEmojis(args.post);
@@ -114,23 +143,33 @@
     }
 
     WikiPostItem.observe('post', function(post) {
-      if (!post || !post.id) {
+      if (!post || (!post.id && !post.postId)) {
         _lastId = null;
         $RealTimeService.unregisterComponent(_realtimeComponent);
 
         return;
       }
 
+      var id = post.postId || post.id,
+          isNow = WikiPostItem.get('template') == 'now';
+
+      if (post.forceShow) {
+        delete post.forceShow;
+
+        WikiPostItem.set('forceHide', true);
+        WikiPostItem.set('show', false);
+      }
+
       _formatPost({
         post: post
       });
 
-      if (_lastId == post.id) {
+      if (_lastId == id) {
         return;
       }
-      _lastId = post.id;
+      _lastId = id;
 
-      _realtimeListEvent = 'wiki-post:' + post.id;
+      _realtimeListEvent = (isNow ? 'wiki-post-locked:' : 'wiki-post:') + id;
 
       $RealTimeService.realtimeComponent(_realtimeComponent, {
         name: _realtimeListEvent,
@@ -144,7 +183,12 @@
           var post = WikiPostItem.get('post') || {};
           post.displayEmojis = null;
 
-          WikiPostItem.set('post', args.post);
+          if (isNow) {
+            WikiPostItem.set('post.locked', args.post.locked);
+          }
+          else {
+            WikiPostItem.set('post', args.post);
+          }
         },
         network: function(on) {
           if (!WikiPostItem) {
@@ -163,9 +207,10 @@
             '/wiki/' + postUrl + '/edit' == url
           );
         }
-      });
+      }, isNow ? _realtimeListEvent : null);
 
       if (WikiPostItem.get('notransition') && WikiPostItem.get('notransition') == 'true') {
+        WikiPostItem.set('forceHide', false);
         WikiPostItem.set('show', true);
       }
 
@@ -177,12 +222,14 @@
             return;
           }
 
+          WikiPostItem.set('forceHide', false);
           WikiPostItem.set('show', true);
-        }, WikiPostItem.get('index') * 150);
+        }, isNow ? 150 : WikiPostItem.get('index') * 150);
       }
     });
 
     WikiPostItem.on('teardown', function() {
+      clearTimeout(_updateActivityDateTimeout);
       $RealTimeService.unregisterComponent(_realtimeComponent);
 
       WikiPostItem = null;

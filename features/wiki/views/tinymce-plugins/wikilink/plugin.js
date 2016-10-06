@@ -39,8 +39,7 @@
         ].join(''),
         _postSummaryItemTemplate = [
           '<li class="type-{{type}}" data-id="{{id}}">{{title}}</li>'
-        ].join(''),
-        _filterChangedTimeout = null;
+        ].join('');
 
     function _search() {
       var searchArgs = {};
@@ -64,14 +63,6 @@
         _lastValue = value;
 
         searchArgs.search = value;
-
-        if (searchArgs.search) {
-          clearTimeout(_filterChangedTimeout);
-
-          _filterChangedTimeout = setTimeout(function() {
-            WikiService.updateWinChartCount('searchInWikilink');
-          }, 1500);
-        }
       }
 
       $socket.once('read(posts/search)', function(args) {
@@ -324,10 +315,6 @@
               isSpecialLink = false;
 
           if (_tabs.items()[0].visible()) {
-            editor.fire('updateWinChartCount', {
-              feature: 'wikiAddLinkInternal'
-            });
-
             var $page = $content.find('.wikilink-article.selected'),
                 $selection = $page.find('.selected');
 
@@ -344,10 +331,6 @@
             }
           }
           else {
-            editor.fire('updateWinChartCount', {
-              feature: 'wikiAddLinkExternal'
-            });
-
             var data = _win.toJSON();
 
             if (!data.href) {

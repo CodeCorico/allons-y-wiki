@@ -13,8 +13,7 @@
           'wiki-reactionscount'
         ],
 
-        _loopUsersSignedTimeInterval = null,
-        _scrollUsed = false;
+        _loopUsersSignedTimeInterval = null;
 
     function _loopUsersSignedTime() {
       if (!WikiHome) {
@@ -66,12 +65,6 @@
     _$el.scrolls.scroll(function() {
       if ($Layout.get('screen') != 'screen-mobile') {
         WikiHome.set('coverScrollingTop', _$el.scrolls.scrollTop() * 0.5);
-      }
-
-      if (!_scrollUsed) {
-        _scrollUsed = true;
-
-        WikiService.updateWinChartCount('homeScroll');
       }
     });
 
@@ -146,24 +139,8 @@
     });
 
     WikiHome.on('postsLastViewedLoaded postsMostReadLoaded postsLastCreatedLoaded', function() {
-      _scrolls.update();
-    });
-
-    WikiHome.on('itemClick', function(List) {
-      if (!List) {
-        return;
-      }
-
-      var type = List.get('type');
-
-      if (type == 'lastviewed') {
-        WikiService.updateWinChartCount('openArticleFromLastViewed');
-      }
-      else if (type == 'mostopened') {
-        WikiService.updateWinChartCount('openArticleFromMostOpened');
-      }
-      else if (type == 'lastcreated') {
-        WikiService.updateWinChartCount('openArticleFromLastCreated');
+      if (_scrolls) {
+        _scrolls.update();
       }
     });
 

@@ -1,0 +1,19 @@
+<h2 class="members-layout-title">{{(contributionsTotal || 0) + ' ' + _(contributionsTotal > 1 ? 'Contributions' : 'Contribution')}}</h2>
+
+<div class="members-layout-section">
+  <rv-require
+    name="wiki-posts-list"
+    src="/public/wiki/wiki-posts-list"
+    class="members-layout-contribution"
+
+    data-type="contributions"
+    data-tablecols="2"
+    data-notransition="true"
+    data-count="all"
+    data-bindparent-userid="member.id"
+    data-bindchild-total="contributionsTotal"
+    data-on-postsloaded="sectionLoaded"
+  ></rv-require>
+
+  <div class="clear"></div>
+</div>

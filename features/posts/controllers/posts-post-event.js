@@ -51,8 +51,14 @@ module.exports = [{
       }
 
       if (!userIsContributor && !$message.lock) {
+        var viewsLength = post.views.toString().length;
+
         post.views++;
         viewsIncremented = true;
+
+        if (post.views.toString().length != viewsLength) {
+          PostModel.nowPostUpdate(post.publicData(), null, 'views');
+        }
 
         $SocketsService.emit($socket, {
           'route.url': /^\/wiki/
@@ -95,6 +101,7 @@ module.exports = [{
         });
 
         PostModel.refreshPost(post);
+        PostModel.refreshPostLocked(post);
 
         $allonsy.log('allons-y-wiki', 'posts:post-lock', {
           label: 'Lock the <strong>' + post.title + '</strong> article',
@@ -119,8 +126,12 @@ module.exports = [{
 
         post.save(function() {
 
-          if (viewsIncremented || (returnMessage.locked && !returnMessage.alreadyLocked)) {
+          if (viewsIncremented) {
             PostModel.refreshPost(post);
+          }
+          else if (returnMessage.locked && !returnMessage.alreadyLocked) {
+            PostModel.refreshPost(post);
+            PostModel.refreshPostLocked(post);
           }
 
           if (viewsIncremented) {
@@ -199,6 +210,7 @@ module.exports = [{
           return $SocketsService.error($socket, $message, 'read(posts/post)', err);
         }
 
+        post.createdAt = new Date();
         post.updatedAt = new Date();
         post.views = 0;
         post.summary = postsSummaryFactory(post.content);
@@ -271,6 +283,8 @@ module.exports = [{
                 contributor.postsContributed.push(post.id);
 
                 contributor.save();
+
+                PostModel.nowPostUpdate(postPublicData, contributor, 'create');
               });
           });
         });
@@ -425,6 +439,7 @@ module.exports = [{
 
     var async = require('async'),
         TagModel = DependencyInjection.injector.controller.get('TagModel'),
+        olStatus = null,
         isNewStatus = false,
         isNewUrl = false;
 
@@ -525,6 +540,12 @@ module.exports = [{
 
               PostModel.refreshPost(post);
               PostModel.callLastUpdatedPosts();
+              PostModel.nowPostUpdate(
+                postPublicData,
+                contributor,
+                isNewStatus ? 'status' : 'update',
+                isNewStatus ? [olStatus, post.status] : null
+              );
 
               if (postUrlChanged) {
                 PostModel.searchPostLinks($message.post.id, false, function(err, posts) {
@@ -587,6 +608,7 @@ module.exports = [{
 
         if (post.status != $message.post.status) {
           isNewStatus = true;
+          olStatus = post.status;
         }
 
         post.title = $message.post.title;
@@ -744,6 +766,8 @@ module.exports = [{
             PostModel.callLastCreatedPosts();
             PostModel.callLastUpdatedPosts();
             PostModel.callMostOpenedPosts();
+
+            PostModel.nowPostUpdate(deletedPost.publicData(), $socket.user, 'delete');
 
             TagModel.deleteTags(deletedPost.tags);
 
@@ -914,6 +938,7 @@ module.exports = [{
         });
 
         PostModel.refreshPost(post);
+        PostModel.refreshPostLocked(post);
 
         PostModel.callPostsOpened();
 
@@ -950,6 +975,7 @@ module.exports = [{
         });
 
         PostModel.refreshPost(post);
+        PostModel.refreshPostLocked(post);
 
         PostModel.callPostsOpened();
 

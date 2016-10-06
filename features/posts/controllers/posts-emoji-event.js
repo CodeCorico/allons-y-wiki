@@ -19,6 +19,8 @@ module.exports = [{
         return;
       }
 
+      var postPublicData = post.publicData();
+
       $SocketsService.emit(null, {
         'route.url': /^\/wiki/
       }, null, 'read(posts/post)', {
@@ -90,9 +92,16 @@ module.exports = [{
 
       var metrics = [{
         key: 'wikiAddPostEmoji',
-        name: 'Emoji added',
-        description: 'Emoji added on an article node.'
+        name: 'Emoji ' + (emojiAdded ? 'added' : 'removed'),
+        description: 'Emoji ' + (emojiAdded ? 'added on' : 'removed from') + ' an article node.'
       }];
+
+      PostModel.nowPostUpdate(
+        postPublicData,
+        $socket.user,
+        'emoji-' + (emojiAdded ? 'added' : 'removed'),
+        emojiAdded ? emojiAdded.emoji : emojiRemoved.emoji
+      );
 
       if (emojiAdded) {
         metrics.push({

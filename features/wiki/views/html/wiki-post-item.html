@@ -3,6 +3,7 @@
     wiki-post-item
     {{template ? 'wiki-post-item-' + template : ''}}
     {{(notransition && notransition == 'true') || show ? 'show' : ''}}
+    {{(notransition && notransition == 'true') || !forceHide ? '' : 'force-hide'}}
     {{selected ? 'selected' : ''}}
     {{cls ? cls : ''}}
     {{(!nolocked || nolocked != 'true') && post.locked ? 'edited-by' : ''}}
@@ -61,7 +62,27 @@
       {{#post.displayEmojis}}
         <span class="emoji-icon emoji-{{icon}}" title="{{count}} {{_(label)}}"></span>
       {{/post.displayEmojis}}
-      {{post.emojis.total ? post.emojis.total : ''}}
+      <span class="wiki-post-item-emojis-total">{{post.emojis.total ? post.emojis.total : ''}}</span>
+    </div>
+  {{/if}}
+
+  {{#if post.activityDateString || post.activityStatus || post.activityMember}}
+    <div class="wiki-post-item-activity">
+      <div class="wiki-post-item-activity-content">
+        {{#if post.activityMember}}
+          <a href="/members/{{post.activityMember.url}}" title="{{post.activityMember.username}}">
+            <img src="{{displayAvatar(post.activityMember.avatarMini)}}" alt="{{post.activityMember.username}}" />
+          </a>
+        {{/if}}
+
+        {{#if post.activityStatus}}
+          <span class="wiki-post-item-activity-status">{{{post.activityStatus}}}</span>
+        {{/if}}
+      </div>
+
+      {{#if post.activityDateString}}
+        <div class="wiki-post-item-date">{{post.activityDateString}}</div>
+      {{/if}}
     </div>
   {{/if}}
 

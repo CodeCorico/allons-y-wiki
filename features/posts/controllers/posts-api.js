@@ -1,8 +1,8 @@
 'use strict';
 
-var MediaService = DependencyInjection.injector.controller.get('MediaService');
+var $MediaService = DependencyInjection.injector.controller.get('$MediaService');
 
-MediaService.onAsyncSafe('postApi.finish', function(fields, callback) {
+$MediaService.onAsyncSafe('postApi.finish', function(fields, callback) {
   fields = fields || {};
 
   var result  = null;
