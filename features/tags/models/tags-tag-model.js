@@ -4,14 +4,9 @@ module.exports = function() {
   DependencyInjection.model('TagModel', function($allonsy, $AbstractModel, $RealTimeService) {
 
     var W = ['what', 'where', 'when', 'who', 'why', 'how'],
-        REALTIME_EVENTS = {
-          'wiki-tagscount': {
-            permissions: ['wiki-access'],
-            call: 'callTagsCount'
-          }
-        },
 
-       _transactionsCounts = [];
+       _transactionsCounts = [],
+       _tagsCount = 0;
 
     return $AbstractModel('TagModel', function() {
 
@@ -37,19 +32,19 @@ module.exports = function() {
         },
 
         init: function() {
-          var _this = this;
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
 
-          Object.keys(REALTIME_EVENTS).forEach(function(eventName) {
-            if (REALTIME_EVENTS[eventName].call) {
-              var call = REALTIME_EVENTS[eventName].call;
+          this.totalChildrenUsedCount(function(total) {
+            _tagsCount = total || 0;
 
-              REALTIME_EVENTS[eventName].call = function() {
-                _this[call].apply(_this, arguments);
-              };
+            if ($WebHomeService) {
+              $WebHomeService.metric({
+                name: 'tagsCount',
+                title: 'tags',
+                value: _tagsCount
+              });
             }
           });
-
-          $RealTimeService.registerEvents(REALTIME_EVENTS);
         },
 
         validTags: function(tags) {
@@ -279,16 +274,26 @@ module.exports = function() {
             return;
           }
 
-          var transaction = _transactionsCounts[0],
-              countsToAdd = (transaction.countsToAdd || []).length ? transaction.countsToAdd : null,
-              countsToRemove = (transaction.countsToRemove || []).length ? transaction.countsToRemove : null;
+          var transaction = _transactionsCounts[0];
+
+          transaction.countsToAdd = transaction.countsToAdd || [];
+          transaction.countsToRemove = transaction.countsToRemove || [];
+
+          var countsToAdd = transaction.countsToAdd.length ? transaction.countsToAdd : null,
+              countsToRemove = transaction.countsToRemove.length ? transaction.countsToRemove : null,
+              childrenToAdd = transaction.countsToAdd.filter(function(tag) {
+                return tag.indexOf('child:') === 0;
+              }),
+              childrenToRemove = transaction.countsToRemove.filter(function(tag) {
+                return tag.indexOf('child:') === 0;
+              });
 
           _this.createMissingTags(countsToAdd, function() {
             _this.incrementCountsTags(countsToAdd, 1, function() {
               _this.incrementCountsTags(countsToRemove, -1, function() {
                 _this.cleanCountsTags(function() {
-                  if (countsToAdd || countsToRemove) {
-                    _this.callTagsCount();
+                  if (childrenToAdd.length || childrenToRemove.length) {
+                    _this.tagsCount(childrenToAdd.length - childrenToRemove.length);
                   }
 
                   _this.nextTransactionUpdateCounts();
@@ -296,6 +301,18 @@ module.exports = function() {
               });
             });
           });
+        },
+
+        tagsCount: function(add) {
+          if (add === 0) {
+            return;
+          }
+
+          _tagsCount += add;
+
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
+
+          $WebHomeService.metric('tagsCount', _tagsCount);
         },
 
         totalChildrenUsedCount: function(callback) {
@@ -377,20 +394,6 @@ module.exports = function() {
           });
 
           return tagsFlatten.join(' ');
-        },
-
-        callTagsCount: function($socket, eventName, args, callback) {
-          eventName = eventName || 'wiki-tagscount';
-
-          this.totalChildrenUsedCount(function(total) {
-            $RealTimeService.fire(eventName, {
-              tagsCount: total || 0
-            }, $socket || null);
-
-            if (callback) {
-              callback();
-            }
-          });
         }
       };
 

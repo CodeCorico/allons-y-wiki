@@ -86,6 +86,8 @@ module.exports = [{
         });
 
         $socket.user.postLocked = null;
+
+        PostModel.postsEdited($socket, false);
       }
 
       if ($message.lock && returnMessage.post.locked) {
@@ -102,6 +104,7 @@ module.exports = [{
 
         PostModel.refreshPost(post);
         PostModel.refreshPostLocked(post);
+        PostModel.postsEdited($socket, post.id);
 
         $allonsy.log('allons-y-wiki', 'posts:post-lock', {
           label: 'Lock the <strong>' + post.title + '</strong> article',
@@ -124,63 +127,38 @@ module.exports = [{
 
         $socket.emit('read(posts/post)', returnMessage);
 
-        post.save(function() {
-
-          if (viewsIncremented) {
-            PostModel.refreshPost(post);
-          }
-          else if (returnMessage.locked && !returnMessage.alreadyLocked) {
-            PostModel.refreshPost(post);
-            PostModel.refreshPostLocked(post);
-          }
-
-          if (viewsIncremented) {
-            PostModel.callMostOpenedPosts();
-          }
-
-          UserModel.fromSocket($socket, function(err, user) {
-            if (err || !user) {
-              return;
+        PostModel
+          .update({
+            id: post.id
+          }, {
+            views: post.views
+          })
+          .exec(function() {
+            if (viewsIncremented) {
+              PostModel.refreshPost(post);
+            }
+            else if (returnMessage.locked && !returnMessage.alreadyLocked) {
+              PostModel.refreshPost(post);
+              PostModel.refreshPostLocked(post);
+              PostModel.postsEdited($socket, post.id);
             }
 
-            user.postsViewed = user.postsViewed || [];
+            if (viewsIncremented) {
+              PostModel.callMostOpenedPosts();
+            }
 
-            for (var i = user.postsViewed.length - 1; i >= 0; i--) {
-              if (user.postsViewed[i].id == post.id) {
-                user.postsViewed.splice(i, 1);
-
-                break;
+            $allonsy.log('allons-y-wiki', 'posts:post-open', {
+              label: 'Open the <strong>' + post.title + '</strong> article',
+              socket: $socket,
+              post: PostModel.mongo.objectId(post.id),
+              postTitle: post.title,
+              metric: {
+                key: 'wikiOpenArticle',
+                name: 'Open article',
+                description: 'Open an article, whatever the origin.'
               }
-            }
-
-            user.postsViewed.unshift({
-              openedAt: new Date(),
-              id: post.id
-            });
-
-            while (user.postsViewed.length > 8) {
-              user.postsViewed.pop();
-            }
-
-            user.save(function() {
-              PostModel.callLastViewedPosts($socket.user.id, null, true);
-
-              PostModel.callPostsOpened();
-
-              $allonsy.log('allons-y-wiki', 'posts:post-open', {
-                label: 'Open the <strong>' + post.title + '</strong> article',
-                socket: $socket,
-                post: PostModel.mongo.objectId(post.id),
-                postTitle: post.title,
-                metric: {
-                  key: 'wikiOpenArticle',
-                  name: 'Open article',
-                  description: 'Open an article, whatever the origin.'
-                }
-              });
             });
           });
-        });
       });
     });
   }
@@ -189,7 +167,7 @@ module.exports = [{
   event: 'create(posts/post)',
   permissions: ['wiki-access', 'wiki-write'],
   controller: function(
-    $allonsy, $socket, $SocketsService, $i18nService, $message, PostModel, UserModel, TagModel, WikiDigestModel,
+    $allonsy, $socket, $SocketsService, $i18nService, $message, PostModel, UserModel, TagModel,
     webUrlFactory, postsSummaryFactory, postsDescriptionFactory, postsLinkFactory, postsCoverThumbsFactory
   ) {
     if (!this.validMessage($message, {
@@ -242,6 +220,8 @@ module.exports = [{
                   return $SocketsService.error($socket, $message, 'read(posts/post)', err);
                 }
 
+                PostModel.postsCount(1);
+
                 $allonsy.log('allons-y-wiki', 'posts:post-create', {
                   label: 'Create the <strong>' + post.title + '</strong> article',
                   socket: $socket,
@@ -273,16 +253,26 @@ module.exports = [{
                 PostModel.refreshLastCreatedPosts(post.id, $socket);
                 PostModel.refreshLastUpdatedPosts(post.id, $socket);
 
-                PostModel.callPostsCount();
+                if (!contributor.isContributor) {
+                  contributor.isContributor = true;
 
-                WikiDigestModel.addContributor(contributor.id);
+                  PostModel.contributorsCount(1);
+                }
 
                 contributor.postsCreated = contributor.postsCreated || [];
                 contributor.postsCreated.push(post.id);
                 contributor.postsContributed = contributor.postsContributed || [];
                 contributor.postsContributed.push(post.id);
 
-                contributor.save();
+                UserModel
+                  .update({
+                    id: contributor.id
+                  }, {
+                    isContributor: contributor.isContributor,
+                    postsCreated: contributor.postsCreated,
+                    postsContributed: contributor.postsContributed
+                  })
+                  .exec(function() { });
 
                 PostModel.nowPostUpdate(postPublicData, contributor, 'create');
               });
@@ -420,7 +410,7 @@ module.exports = [{
   event: 'update(posts/post)',
   permissions: ['wiki-access', 'wiki-write'],
   controller: function(
-    $allonsy, $socket, $SocketsService, $i18nService, $message, PostModel, UserModel, WikiDigestModel,
+    $allonsy, $socket, $SocketsService, $i18nService, $message, PostModel, UserModel,
     webUrlFactory, postsSummaryFactory, postsDescriptionFactory, postsLinkFactory, postsCoverThumbsFactory, postsEmojiFactory
   ) {
     if (!this.validMessage($message, {
@@ -486,112 +476,153 @@ module.exports = [{
           post.linksPosts = postsLinksAll.availablePosts;
 
           postsCoverThumbsFactory(post, function() {
-            post.save(function(err) {
-              if (err) {
-                return $SocketsService.error($socket, $message, 'read(posts/post)', err);
-              }
+            PostModel
+              .update({
+                id: post.id
+              }, {
+                updatedAt: post.updatedAt,
+                url: post.url,
+                redirections: post.redirections,
+                contributors: post.contributors,
+                title: post.title,
+                content: post.content,
+                status: post.status,
+                cover: post.cover,
+                coverThumb: post.coverThumb,
+                coverLarge: post.coverLarge,
+                summary: post.summary,
+                description: post.description,
+                emojis: post.emojis,
+                tags: post.tags,
+                search1: post.search1,
+                search2: post.search2,
+                search3: post.search3,
+                links: post.links,
+                linksPosts: post.linksPosts
+              })
+              .exec(function(err) {
+                if (err) {
+                  return $SocketsService.error($socket, $message, 'read(posts/post)', err);
+                }
 
-              var metrics = [{
-                key: 'wikiUpdatePost',
-                name: 'Update article',
-                description: 'Article is saved in the database.'
-              }];
+                var metrics = [{
+                  key: 'wikiUpdatePost',
+                  name: 'Update article',
+                  description: 'Article is saved in the database.'
+                }];
 
-              if (isNewStatus) {
-                metrics.push({
-                  key: 'wikiEditChangeStatus',
-                  name: 'Change status',
-                  description: 'Change an article status (published/draft/obsolete).'
+                if (isNewStatus) {
+                  metrics.push({
+                    key: 'wikiEditChangeStatus',
+                    name: 'Change status',
+                    description: 'Change an article status (published/draft/obsolete).'
+                  });
+                }
+
+                if (isNewUrl) {
+                  metrics.push({
+                    key: 'wikiEditPostUrl',
+                    name: 'Change URL',
+                    description: 'Save article with a new URL.'
+                  });
+                }
+
+                $allonsy.log('allons-y-wiki', 'posts:post-update', {
+                  label: 'Update the <strong>' + post.title + '</strong> article',
+                  socket: $socket,
+                  post: PostModel.mongo.objectId(post.id),
+                  postTitle: post.title,
+                  postContent: post.content,
+                  postUrl: post.url,
+                  postRedirections: post.redirections,
+                  postContentLength: post.content.length,
+                  postTags: post.tags,
+                  metrics: metrics
                 });
-              }
 
-              if (isNewUrl) {
-                metrics.push({
-                  key: 'wikiEditPostUrl',
-                  name: 'Change URL',
-                  description: 'Save article with a new URL.'
+                var postPublicData = post.publicData();
+                PostModel.populateLocked($SocketsService, $socket, postPublicData);
+
+                $SocketsService.emit($socket, {
+                  'route.url': /^\/wiki/
+                }, null, 'read(posts/post)', {
+                  post: postPublicData,
+                  updated: true,
+                  enterUrl: $message.enterUrl,
+                  enterMode: $message.enterMode
                 });
-              }
 
-              $allonsy.log('allons-y-wiki', 'posts:post-update', {
-                label: 'Update the <strong>' + post.title + '</strong> article',
-                socket: $socket,
-                post: PostModel.mongo.objectId(post.id),
-                postTitle: post.title,
-                postContent: post.content,
-                postUrl: post.url,
-                postRedirections: post.redirections,
-                postContentLength: post.content.length,
-                postTags: post.tags,
-                metrics: metrics
-              });
+                PostModel.refreshPost(post);
+                PostModel.callLastUpdatedPosts();
+                PostModel.nowPostUpdate(
+                  postPublicData,
+                  contributor,
+                  isNewStatus ? 'status' : 'update',
+                  isNewStatus ? [olStatus, post.status] : null
+                );
 
-              var postPublicData = post.publicData();
-              PostModel.populateLocked($SocketsService, $socket, postPublicData);
+                if (postUrlChanged) {
+                  PostModel.searchPostLinks($message.post.id, false, function(err, posts) {
+                    if (err) {
+                      return $SocketsService.error($socket, $message, 'read(posts/post)', err);
+                    }
 
-              $SocketsService.emit($socket, {
-                'route.url': /^\/wiki/
-              }, null, 'read(posts/post)', {
-                post: postPublicData,
-                updated: true,
-                enterUrl: $message.enterUrl,
-                enterMode: $message.enterMode
-              });
+                    posts = posts || [];
 
-              PostModel.refreshPost(post);
-              PostModel.callLastUpdatedPosts();
-              PostModel.nowPostUpdate(
-                postPublicData,
-                contributor,
-                isNewStatus ? 'status' : 'update',
-                isNewStatus ? [olStatus, post.status] : null
-              );
+                    async.mapSeries(posts, function(matchedPost, nextPost) {
+                      if (matchedPost.links) {
+                        var postChanged = false;
 
-              if (postUrlChanged) {
-                PostModel.searchPostLinks($message.post.id, false, function(err, posts) {
-                  if (err) {
-                    return $SocketsService.error($socket, $message, 'read(posts/post)', err);
-                  }
+                        for (var link in matchedPost.links) {
+                          if (link.indexOf($message.post.id) != -1) {
+                            postChanged = true;
+                            var linkArr = matchedPost.links[link].split('#');
+                            linkArr[0] = post.url;
+                            matchedPost.links[link] = linkArr.join('#');
+                          }
+                        }
 
-                  posts = posts || [];
-
-                  async.mapSeries(posts, function(matchedPost, nextPost) {
-                    if (matchedPost.links) {
-                      var postChanged = false;
-
-                      for (var link in matchedPost.links) {
-                        if (link.indexOf($message.post.id) != -1) {
-                          postChanged = true;
-                          var linkArr = matchedPost.links[link].split('#');
-                          linkArr[0] = post.url;
-                          matchedPost.links[link] = linkArr.join('#');
+                        if (postChanged) {
+                          PostModel
+                            .update({
+                              id: matchedPost.id
+                            }, {
+                              links: matchedPost.links
+                            })
+                            .exec(function(err) {
+                              if (err) {
+                                return $SocketsService.error($socket, $message, 'read(posts/post)', err);
+                              }
+                            });
                         }
                       }
 
-                      if (postChanged) {
-                        matchedPost.save(function(err) {
-                          if (err) {
-                            return $SocketsService.error($socket, $message, 'read(posts/post)', err);
-                          }
-                        });
-                      }
-                    }
-
-                    nextPost();
+                      nextPost();
+                    });
                   });
-                });
-              }
+                }
 
-              WikiDigestModel.addContributor(contributor.id);
+                contributor.postsContributed = contributor.postsContributed || [];
 
-              contributor.postsContributed = contributor.postsContributed || [];
+                if (contributor.postsContributed.indexOf(post.id) < 0) {
+                  contributor.postsContributed.push(post.id);
 
-              if (contributor.postsContributed.indexOf(post.id) == -1) {
-                contributor.postsContributed.push(post.id);
+                  if (!contributor.isContributor) {
+                    contributor.isContributor = true;
 
-                contributor.save();
-              }
-            });
+                    PostModel.contributorsCount(1);
+                  }
+
+                  UserModel
+                    .update({
+                      id: contributor.id
+                    }, {
+                      postsContributed: contributor.postsContributed,
+                      isContributor: contributor.isContributor
+                    })
+                    .exec(function() { });
+                }
+              });
           });
         });
       });
@@ -737,6 +768,8 @@ module.exports = [{
               return $SocketsService.error($socket, $message, 'read(posts/post)', err);
             }
 
+            PostModel.postsCount(-1);
+
             $allonsy.log('allons-y-wiki', 'posts:post-delete', {
               label: 'Delete the <strong>' + deletedPost.title + '</strong> article',
               socket: $socket,
@@ -806,19 +839,25 @@ module.exports = [{
                       }
                     );
 
-                    post.save(function(err) {
-                      if (err) {
-                        return $SocketsService.error($socket, $message, 'read(posts/post)', err);
-                      }
-                    });
+                    PostModel
+                      .update({
+                        id: post.id
+                      }, {
+                        links: post.links,
+                        postsLinks: post.postsLinks,
+                        content: post.content
+                      })
+                      .exec(function(err) {
+                        if (err) {
+                          return $SocketsService.error($socket, $message, 'read(posts/post)', err);
+                        }
+                      });
                   }
                 }
                 nextPost();
               });
 
             });
-
-            PostModel.callPostsCount();
 
             var UserModel = DependencyInjection.injector.controller.get('UserModel');
 
@@ -851,38 +890,22 @@ module.exports = [{
                   }
 
                   if (postsCreatedIndex > -1 || postsContributedIndex > -1) {
-                    user.save(function() {
-                      nextUser();
-                    });
+                    UserModel
+                      .update({
+                        id: user.id
+                      }, {
+                        postsCreated: user.postsCreated,
+                        postsContributed: user.postsContributed
+                      })
+                      .exec(function() {
+                        nextUser();
+                      });
                   }
                   else {
                     nextUser();
                   }
 
-                }, function() {
-
-                  UserModel
-                    .find({
-                      'postsViewed.id': $message.id
-                    })
-                    .exec(function(err, users) {
-                      if (err || !users || !users.length) {
-                        return;
-                      }
-
-                      async.eachSeries(users, function(user, nextUser) {
-                        for (var i = 0; i < user.postsViewed.length; i++) {
-                          if (user.postsViewed[i].id == $message.id) {
-                            user.postsViewed.splice(i, 1);
-                            break;
-                          }
-                        }
-
-                        user.save(nextUser);
-                      }, function() { });
-                    });
-
-                });
+                }, function() { });
               });
 
           });
@@ -939,8 +962,7 @@ module.exports = [{
 
         PostModel.refreshPost(post);
         PostModel.refreshPostLocked(post);
-
-        PostModel.callPostsOpened();
+        PostModel.postsEdited($socket, post.id);
 
         $allonsy.log('allons-y-wiki', 'posts:post-lock', {
           label: 'Lock the <strong>' + post.title + '</strong> article',
@@ -976,8 +998,7 @@ module.exports = [{
 
         PostModel.refreshPost(post);
         PostModel.refreshPostLocked(post);
-
-        PostModel.callPostsOpened();
+        PostModel.postsEdited($socket, false);
 
         $allonsy.log('allons-y-wiki', 'posts:post-unlock', {
           label: 'Unlock the <strong>' + post.title + '</strong> article',

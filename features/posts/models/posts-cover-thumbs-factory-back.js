@@ -2,7 +2,7 @@ module.exports = function() {
   'use strict';
 
   var path = require('path'),
-      rootPath = path.resolve(__dirname, '../../..');
+      rootPath = path.resolve('./');
 
   DependencyInjection.factory('postsCoverThumbsFactory', function($allonsy, thumbnailsFactory) {
 

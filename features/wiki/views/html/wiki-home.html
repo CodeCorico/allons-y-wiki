@@ -8,108 +8,7 @@
 
       {{#inject wiki-home-before /}}
 
-      <div class="wiki-home-content wiki-home-content-header wiki-home-numbers">
-        <div class="wiki-home-cover" style="transform: translateY({{coverScrollingTop}}px);"></div>
-
-        <div class="row">
-          <div class="six columns full-width">
-            <div class="wiki-home-content-header-intro">
-              <h1>{{_('Allons-y Wiki')}}</h1>
-              <p>
-                {{{_('Welcome to this knowledge center. We would love to see you contribute on any subject.')}}}
-              </p>
-            </div>
-          </div>
-
-          <div class="three columns">
-            <div class="three-inner">
-
-              <div class="wiki-home-number">
-                {{postsCount}}
-                <div
-                  class="wiki-home-number-evolution"
-                  title="{{_('x more/less articles were created during last 30 days compare to the previous 30 days')}}"
-                >
-                  <span class="{{newPostsCount >= 0 ? 'up' : 'down'}}">+{{newPostsCount}}</span>
-                  <span class="{{newPostsPercent >= 0 ? 'up' : 'down'}}">({{(newPostsPercent >= 0 ? '+' : '') + newPostsPercent}}x)</span>
-                </div>
-              </div>
-              <h3>{{_('Articles')}}</h3>
-
-              <div class="wiki-home-number">
-                {{contributorsCount}}
-                <div
-                  class="wiki-home-number-evolution"
-                  title="{{_('x more/less contributors were created during last 30 days compare to the previous 30 days')}}"
-                >
-                  <span class="{{newContributorsCount >= 0 ? 'up' : 'down'}}">+{{newContributorsCount}}</span>
-                  <span class="{{newContributorsPercent >= 0 ? 'up' : 'down'}}">({{(newContributorsPercent >= 0 ? '+' : '') + newContributorsPercent}}x)</span>
-                </div>
-              </div>
-              <h3>{{_('Contributors')}}</h3>
-
-              <div class="wiki-home-number">{{tagsCount}}</div>
-              <h3>{{_('Tags')}}</h3>
-
-              <div class="wiki-home-number">{{reactionsCount}}</div>
-              <h3>{{_('Reactions')}}</h3>
-            </div>
-          </div>
-          <div class="three columns wiki-home-numbers-small">
-            <div class="three-inner">
-              <div class="wiki-home-number-small">
-                <span>{{usersSigned.length}}</span> <span>{{_('connected members')}}</span>
-              </div>
-              <div class="wiki-home-number-small"><span>{{postsOpened}}</span> <span>{{_('articles opened')}}</span></div>
-              <div class="wiki-home-number-small"><span>{{postsEdited}}</span> <span>{{_('articles under edition')}}</span></div>
-
-              <div class="wiki-home-connected-members">
-                {{#usersSigned:i}}
-                <a
-                  class="wiki-home-connected-member {{this.show ? 'show' : ''}}"
-                  style="background-image: url('{{displayAvatar(avatarMini)}}');"
-                  title="{{{username + _(' since ') + signedFromAgo}}}"
-                  href="/members/{{url}}"
-                ></a>
-                {{/usersSigned:i}}
-                <div class="clear"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="wiki-home-content">
-        <div class="row">
-          <div class="twelve columns full-width">
-            <h2 class="pl-title">{{_('My Last opened')}}</h2>
-          </div>
-        </div>
-
-        <div class="row row-bg wiki-home-lastviewed">
-          {{#inject wiki-home-last-viewed}}
-            <rv-require
-              name="wiki-posts-list"
-              src="/public/wiki/wiki-posts-list"
-
-              data-type="lastviewed"
-              data-nolocked="true"
-              data-noviews="true"
-              data-nostatus="true"
-              data-nodescription="true"
-              data-nocontributors="true"
-              data-noemojis="true"
-              data-on-postsloaded="postsLastViewedLoaded"
-            >
-              <rv-partial target="wiki-post-item-extend">
-                <div class="wiki-home-lastviewed-details" title="\{{post.openedAtText}}">
-                  {{_('opened')}} \{{post.openedAtAgo}}
-                </div>
-              </rv-partial>
-          </rv-require>
-          {{/inject}}
-        </div>
-
         <div class="row row-bg">
           <div class="six columns full-width">
 
@@ -145,5 +44,4 @@
       </div>
     </div>
   </section>
-
 </div>

@@ -72,6 +72,7 @@
         {{#if post.activityMember}}
           <a href="/members/{{post.activityMember.url}}" title="{{post.activityMember.username}}">
             <img src="{{displayAvatar(post.activityMember.avatarMini)}}" alt="{{post.activityMember.username}}" />
+            {{post.activityMember.firstname}}
           </a>
         {{/if}}
 

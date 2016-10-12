@@ -37,7 +37,7 @@ module.exports = [{
         emojiAdded: emojiAdded
       } : null);
 
-      PostModel.callReactionsCount();
+      PostModel.reactionsCount(emojiAdded ? 1 : -1);
 
       if (emojiAdded) {
         var contributors = post.contributors

@@ -861,7 +861,7 @@
                       src = results && results.coverLarge || data.src;
 
                   $('<img />')
-                    .load(function() {
+                    .bind('load', function() {
                       _changeCover(data.src, src);
                     })
                     .attr('src', src);

@@ -11,35 +11,13 @@
             total: 0
           }, $data)
         }),
-        _posts = null,
         _total = null,
-        _loopTimesInterval = false,
         _realtimeComponent = 'wikiPostsListController' + WikiPostsList.get('componentId'),
         _realtimeListEvent = null,
         _todayTitleUsed = false,
         _weekTitleUsed = false,
         _monthTitleUsed = false,
         _beforeMonthTitleUsed = false;
-
-    function _loopTimes() {
-      if (!WikiPostsList) {
-        return;
-      }
-
-      if (_loopTimesInterval) {
-        clearInterval(_loopTimesInterval);
-      }
-
-      (_posts || []).forEach(function(post) {
-        post.openedAtAgo = window.moment(post.openedAt).fromNow();
-        post.openedAtText = window.moment(post.openedAt).format('DD/MM/YYYY hh:mm a');
-      });
-
-      WikiPostsList.set('posts', _posts);
-
-      // 1min
-      _loopTimesInterval = setTimeout(_loopTimes, 60000);
-    }
 
     function _updateRealtimeEvents() {
       _realtimeListEvent = [
@@ -58,23 +36,6 @@
         update: function(event, args) {
           if (!args || !args.posts) {
             return;
-          }
-
-          var hasTimes = false;
-
-          if (WikiPostsList.get('type') == 'lastviewed') {
-            _posts = args.posts;
-
-            if (_posts && _posts.length) {
-              hasTimes = true;
-            }
-          }
-
-          if (hasTimes) {
-            _loopTimes();
-          }
-          else if (_loopTimesInterval) {
-            clearInterval(_loopTimesInterval);
           }
 
           if (WikiPostsList.get('type') == 'lastupdated') {

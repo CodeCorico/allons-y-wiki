@@ -48,22 +48,6 @@ module.exports = function() {
             permissions: ['wiki-access'],
             call: 'callMostOpenedPosts'
           },
-          'wiki-lastviewed': {
-            permissions: ['wiki-access'],
-            call: 'callLastViewedPosts'
-          },
-          'wiki-postsopened': {
-            permissions: ['wiki-access'],
-            call: 'callPostsOpened'
-          },
-          'wiki-postscount': {
-            permissions: ['wiki-access'],
-            call: 'callPostsCount'
-          },
-          'wiki-reactionscount': {
-            permissions: ['wiki-access'],
-            call: 'callReactionsCount'
-          },
           'wiki-contributions': {
             permissions: ['wiki-access'],
             call: 'callContributions'
@@ -81,10 +65,24 @@ module.exports = function() {
             description:  'Create a new empty article.'
           }]
         },
-        WIKI_HOME_EDIT_PATTERN = /^\/wiki\/(?!create\/?$).+?\/?$/,
+        WIKI_HOME_TILE = {
+          url: '/wiki',
+          cover: '/public/wiki/wiki-home.jpg',
+          large: true,
+          centered: {
+            title: 'WIKI'
+          }
+        },
+        WIKI_URL_PATTERN = /^\/wiki\/?$/,
+        WIKI_POST_URL_PATTERN = /^\/wiki\/(?!create\/?$)(.+?)\/?$/,
 
         extend = require('extend'),
-        async = require('async');
+        async = require('async'),
+        _postsOpened = 0,
+        _postsEdited = 0,
+        _postsCount = 0,
+        _contributorsCount = 0,
+        _reactionsCount = 0;
 
     return $AbstractModel('PostModel', function() {
 
@@ -176,6 +174,7 @@ module.exports = function() {
             tagName = (tagName || '').toLowerCase();
 
             var _this = this,
+                PostModel = DependencyInjection.injector.model.get('PostModel'),
                 i = -1,
                 found = false,
                 emojiAdded = null,
@@ -275,9 +274,15 @@ module.exports = function() {
             });
 
             if (found) {
-              this.save(function() {
-                callback(null, _this, emojiAdded, emojiRemoved);
-              });
+              PostModel
+                .update({
+                  id: this.id
+                }, {
+                  emojis: this.emojis
+                })
+                .exec(function() {
+                  callback(null, _this, emojiAdded, emojiRemoved);
+                });
 
               return;
             }
@@ -338,9 +343,84 @@ module.exports = function() {
             });
           });
 
+          UserModel.homeDefaultTile(extend(true, {
+            date: new Date()
+          }, WIKI_HOME_TILE), ['wiki-access']);
+
           $WebCreateService.links(function() {
             _this.webCreateLinks.apply(this, arguments);
           });
+
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
+
+          if ($WebHomeService) {
+            $WebHomeService.metric({
+              name: 'postsOpened',
+              title: 'articles opened',
+              value: 0
+            });
+
+            $WebHomeService.metric({
+              name: 'postsEdited',
+              title: 'articles under edition',
+              value: 0
+            });
+          }
+
+          async.waterfall([function(next) {
+
+            _this
+              .count()
+              .exec(function(err, count) {
+                _postsCount = count || 0;
+
+                if ($WebHomeService) {
+                  $WebHomeService.metric({
+                    name: 'postsCount',
+                    title: 'articles',
+                    value: _postsCount
+                  });
+                }
+
+                next();
+              });
+
+          }, function(next) {
+
+            UserModel
+              .count({
+                isContributor: true
+              })
+              .exec(function(err, count) {
+                _contributorsCount = count || 0;
+
+                if ($WebHomeService) {
+                  $WebHomeService.metric({
+                    name: 'contributorsCount',
+                    title: 'contributors',
+                    value: _contributorsCount
+                  });
+                }
+
+                next();
+              });
+
+          }, function(next) {
+
+            _this.totalEmojis(function(total) {
+              _reactionsCount = total || 0;
+
+              if ($WebHomeService) {
+                $WebHomeService.metric({
+                  name: 'reactionsCount',
+                  title: 'reactions',
+                  value: _reactionsCount
+                });
+              }
+
+              next();
+            });
+          }]);
         },
 
         webCreateLinks: function(sockets, sections, callback) {
@@ -355,6 +435,30 @@ module.exports = function() {
           });
 
           callback();
+        },
+
+        postsCount: function(add) {
+          _postsCount += add;
+
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
+
+          $WebHomeService.metric('postsCount', _postsCount);
+        },
+
+        contributorsCount: function(add) {
+          _contributorsCount += add;
+
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
+
+          $WebHomeService.metric('contributorsCount', _contributorsCount);
+        },
+
+        reactionsCount: function(add) {
+          _reactionsCount += add;
+
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
+
+          $WebHomeService.metric('reactionsCount', _reactionsCount);
         },
 
         protectedUrls: function() {
@@ -761,129 +865,96 @@ module.exports = function() {
             });
         },
 
-        callLastViewedPosts: function($socket, eventName, args, callback) {
-          eventName = eventName || 'wiki-lastviewed';
-
+        postsOpened: function($socket, url) {
           var _this = this,
-              sockets = [$socket],
-              UserModel = DependencyInjection.injector.model.get('UserModel'),
-              $SocketsService = DependencyInjection.injector.model.get('$SocketsService');
+              match = url && url.match(WIKI_POST_URL_PATTERN) || false,
+              matchWiki = !match && url && url.match(WIKI_URL_PATTERN) || false,
+              UserModel = DependencyInjection.injector.model.get('UserModel');
 
-          function fire(posts) {
-            sockets.forEach(function(socket) {
-              $RealTimeService.fire(eventName, {
-                posts: posts
-              }, socket);
-            });
+          if ((match || matchWiki) && $socket && $socket.user && $socket.user.id) {
+            var tile = null;
 
-            if (callback) {
-              callback();
-            }
-          }
+            async.waterfall([function(next) {
+              if (matchWiki) {
+                tile = extend(true, {
+                  date: new Date()
+                }, WIKI_HOME_TILE);
 
-          if (typeof $socket != 'object') {
-            sockets = [];
+                return next();
+              }
 
-            var userId = $socket;
+              var postUrl = match[1].split('/')[0];
 
-            $SocketsService.each(function(socket) {
-              if (!socket || !socket.user || !socket.user.id || socket.user.id != userId) {
+              _this
+                .findOne({
+                  url: postUrl
+                })
+                .exec(function(err, post) {
+                  if (err || !post) {
+                    return;
+                  }
+
+                  tile = {
+                    date: new Date(),
+                    url: '/wiki/' + postUrl,
+                    cover: post.coverThumb,
+                    details: {
+                      title: post.title,
+                      text: post.description
+                    }
+                  };
+
+                  next();
+                });
+
+            }, function() {
+              if (!tile) {
                 return;
               }
 
-              sockets.push(socket);
-            });
+              UserModel.addHomeTile(tile, $socket.user.id);
+            }]);
           }
 
-          if (!sockets.length) {
+          if (match && !$socket.isPostOpened) {
+            _postsOpened++;
+          }
+          else if (!match && $socket.isPostOpened) {
+            _postsOpened--;
+          }
+          else {
             return;
           }
 
-          UserModel.fromSocket(sockets[0], function(err, user) {
-            if (err || !user) {
-              if (callback) {
-                callback();
-              }
+          $socket.isPostOpened = !!match;
 
-              return;
-            }
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
+          if (!$WebHomeService) {
+            return;
+          }
 
-            user.postsViewed = user.postsViewed || [];
-
-            if (!user.postsViewed.length) {
-              return fire([]);
-            }
-
-            var postsViewedIds = user.postsViewed.map(function(postViewed) {
-              return postViewed.id;
-            });
-
-            _this
-              .find({
-                id: postsViewedIds
-              })
-              .limit(8)
-              .exec(function(err, posts) {
-                if (err || !posts) {
-                  if (callback) {
-                    callback();
-                  }
-
-                  return;
-                }
-
-                posts = (posts || [])
-                  .map(function(post) {
-                    return post.tileData({
-                      openedAt: user.postsViewed[postsViewedIds.indexOf(post.id)].openedAt
-                    }, [
-                      'description', 'contributors', 'views', 'emojis', 'status'
-                    ]);
-                  });
-
-                posts.sort(function(a, b) {
-                  var indexA = postsViewedIds.indexOf(a.id),
-                      indexB = postsViewedIds.indexOf(b.id);
-
-                  return indexA - indexB;
-                });
-
-                fire(posts);
-
-                if (callback) {
-                  callback();
-                }
-              });
-          });
+          $WebHomeService.metric('postsOpened', _postsOpened);
         },
 
-        callPostsOpened: function($socket, eventName, args, callback) {
-          eventName = eventName || 'wiki-postsopened';
-
-          var $SocketsService = DependencyInjection.injector.model.get('$SocketsService'),
-              postsOpened = 0,
-              postsEdited = 0;
-
-          $SocketsService.each(function(socket) {
-            if (socket && socket.user && socket.route) {
-              if (socket.route.url.match(WIKI_HOME_EDIT_PATTERN)) {
-                postsOpened++;
-
-                if (socket.user.postLocked) {
-                  postsEdited++;
-                }
-              }
-            }
-          });
-
-          $RealTimeService.fire(eventName, {
-            postsOpened: postsOpened,
-            postsEdited: postsEdited
-          }, $socket || null);
-
-          if (callback) {
-            callback();
+        postsEdited: function($socket, postId) {
+          if (!$socket.lastPostLocked && postId) {
+            _postsEdited++;
           }
+          else if ($socket.lastPostLocked && !postId) {
+            _postsEdited--;
+          }
+          else {
+            return;
+          }
+
+          $socket.lastPostLocked = postId;
+
+          var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
+          if (!$WebHomeService) {
+            return;
+          }
+
+          $WebHomeService.metric('postsEdited', _postsEdited);
         },
 
         callContributions: function($socket, eventName, args, callback) {
@@ -976,77 +1047,6 @@ module.exports = function() {
 
               callback(null, postsFetched);
             });
-        },
-
-        callPostsCount: function($socket, eventName, args, callback) {
-          eventName = eventName || 'wiki-postscount';
-
-          var _this = this,
-              result = {};
-
-          this
-            .count()
-            .exec(function(err, count) {
-              if (!err) {
-                result.postsCount = count;
-              }
-
-              var dateLastMonth = new Date(),
-                  dateBeforeLastMonth = new Date();
-
-              dateLastMonth.setDate(dateLastMonth.getDate() - 30);
-              dateBeforeLastMonth.setDate(dateBeforeLastMonth.getDate() - 60);
-
-              _this
-                .count({
-                  createdAt: {
-                    '>': dateBeforeLastMonth,
-                    '<': dateLastMonth
-                  }
-                })
-                .exec(function(err, beforeCount) {
-                  beforeCount = beforeCount || 0;
-
-                  _this
-                    .count({
-                      createdAt: {
-                        '>': dateLastMonth
-                      }
-                    })
-                    .exec(function(err, count) {
-                      if (!err) {
-                        var newPostsPercent = 0;
-                        if (count && beforeCount) {
-                          newPostsPercent = count >= beforeCount ? count / beforeCount : -(beforeCount / count);
-                          newPostsPercent = Math.round(newPostsPercent * 10) / 10;
-                        }
-
-                        result.newPostsCount = count;
-                        result.newPostsPercent = newPostsPercent;
-                      }
-
-                      $RealTimeService.fire(eventName, result, $socket || null);
-
-                      if (callback) {
-                        callback();
-                      }
-                    });
-                });
-            });
-        },
-
-        callReactionsCount: function($socket, eventName, args, callback) {
-          eventName = eventName || 'wiki-reactionscount';
-
-          this.totalEmojis(function(total) {
-            $RealTimeService.fire(eventName, {
-              reactionsCount: total || 0
-            }, $socket || null);
-
-            if (callback) {
-              callback();
-            }
-          });
         },
 
         refreshPost: function(post, args, socket) {
@@ -1201,11 +1201,17 @@ module.exports = function() {
                   }
                 }
 
-                post.save(function() {
-                  _this.refreshPost(post);
+                _this
+                  .update({
+                    id: post.id
+                  }, {
+                    contributors: post.contributors
+                  })
+                  .exec(function() {
+                    _this.refreshPost(post);
 
-                  nextPost();
-                });
+                    nextPost();
+                  });
 
               }, callback);
             });
@@ -1394,6 +1400,7 @@ module.exports = function() {
                   postPublicData.activityMember = {
                     id: member.id,
                     url: member.url,
+                    firstname: member.firstname,
                     username: member.username,
                     avatarMini: member.avatarMini
                   };
