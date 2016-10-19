@@ -3,6 +3,7 @@
 module.exports = [{
 
   event: 'update(posts/emoji)',
+  isMember: true,
   permissions: ['wiki-access'],
   controller: function($allonsy, $socket, $SocketsService, PostModel, UserModel, $message) {
     if (!this.validMessage($message, {

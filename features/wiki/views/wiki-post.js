@@ -254,6 +254,10 @@
     }
 
     function _applyReactions() {
+      if (!_user || !_user.id) {
+        return;
+      }
+
       _$el.content.find('.add-reaction').remove();
 
       var emojis = WikiPost.get('post.emojis');
