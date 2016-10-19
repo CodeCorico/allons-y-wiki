@@ -7,22 +7,22 @@ module.exports = function() {
         PERMISSIONS = {
           'wiki-access': {
             title: 'Access to the Wiki app',
-            description: 'Access to the Wiki app',
+            description: 'Access to the Wiki app.',
             isPublic: true
           },
           'wiki-write': {
             title: 'Write to the Wiki app',
-            description: 'Write permission to the Wiki app',
+            description: 'Create and edit articles in the Wiki.',
             isPublic: true
           },
           'wiki-ask-share-read': {
-            title: 'Ask to share an article in write mode.',
+            title: 'Ask to share an article in write mode',
             description: 'Ask to share an article in write mode.',
             linked: true,
             isPublic: false
           },
           'wiki-ask-share-write': {
-            title: 'Ask to share an article in read mode.',
+            title: 'Ask to share an article in read mode',
             description: 'Ask to share an article in read mode.',
             linked: true,
             isPublic: false
