@@ -1363,7 +1363,6 @@ module.exports = function() {
                 delete postPublicData.search2;
                 delete postPublicData.tags;
                 delete postPublicData.content;
-                delete postPublicData.locked;
                 delete postPublicData.links;
                 delete postPublicData.linksPosts;
                 delete postPublicData.redirections;
@@ -1376,6 +1375,7 @@ module.exports = function() {
                   postPublicData.activityStatus = 'has published';
                 }
                 else if (type == 'delete') {
+                  delete postPublicData.locked;
                   postPublicData.activityStatus = 'has deleted';
                 }
                 else if (type == 'update') {
