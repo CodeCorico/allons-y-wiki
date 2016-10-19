@@ -67,7 +67,7 @@ module.exports = function() {
         },
         WIKI_HOME_TILE = {
           url: '/wiki',
-          cover: '/public/wiki/wiki-home.jpg',
+          cover: '/public/wiki/wiki-home.png',
           large: true,
           centered: {
             title: 'WIKI'
@@ -897,7 +897,7 @@ module.exports = function() {
                   tile = {
                     date: new Date(),
                     url: '/wiki/' + postUrl,
-                    cover: post.coverThumb,
+                    cover: post.coverThumb || '/public/wiki/default-article.png',
                     details: {
                       title: post.title,
                       text: post.description

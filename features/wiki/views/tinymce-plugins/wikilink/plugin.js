@@ -199,7 +199,7 @@
             .replace(/{{before}}/g, '<strong>')
             .replace(/{{after}}/g, '</strong>')
           )
-          .replace(/{{coverThumb}}/g, post.coverThumb || '/public/wiki/default-article.jpg')
+          .replace(/{{coverThumb}}/g, post.coverThumb || '/public/wiki/default-article.png')
           .replace(/{{cls}}/g, [
             existsId.indexOf(post.id) > -1 ? 'no-animation' : '',
             isActiveArticle ? 'actual' : ''

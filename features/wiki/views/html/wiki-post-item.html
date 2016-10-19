@@ -10,7 +10,7 @@
   "
   style="{{
     !template || template != 'white' ?
-      'background-image: url(\'' + (post.coverThumb || '/public/wiki/default-article.jpg') + '\');' :
+      'background-image: url(\'' + (post.coverThumb || '/public/wiki/default-article.png') + '\');' :
       ''
   }}"
   href="/wiki/{{post.url}}"
@@ -19,7 +19,7 @@
   {{#if template == 'white'}}
     <div
       class="wiki-post-item-white-cover"
-      style="background-image: url('{{post.coverThumb || '/public/wiki/default-article.jpg'}}');"
+      style="background-image: url('{{post.coverThumb || '/public/wiki/default-article.png'}}');"
     ></div>
   {{/if}}
 

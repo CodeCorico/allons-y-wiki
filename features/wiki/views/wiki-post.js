@@ -1408,7 +1408,7 @@
 
           args.searchPosts = args.searchPosts || [];
           args.searchPosts.forEach(function(post) {
-            post.cover = post.cover || '/public/wiki/default-article.jpg';
+            post.cover = post.cover || '/public/wiki/default-article.png';
           });
 
           WikiPost.set('searchPosts', args.searchPosts);

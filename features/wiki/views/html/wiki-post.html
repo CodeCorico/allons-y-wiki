@@ -29,7 +29,7 @@
         <div
           class="wiki-post-cover {{haspost ? 'show' : ''}}"
           style="transform: translateY({{coverScrollingTop}}px);
-          background-image: url('{{(editMode ? editPost.coverLarge : post.coverLarge) || '/public/wiki/default-article.jpg'}}')"
+          background-image: url('{{(editMode ? editPost.coverLarge : post.coverLarge) || '/public/wiki/default-article.png'}}')"
         ></div>
         <h1>{{post.title}}</h1>
         <div class="wiki-post-old-title">{{oldTitle}}</div>
@@ -231,7 +231,7 @@
           <a
             href="/wiki/{{url}}"
             class="wiki-post-search-post"
-            style="background-image: url('{{coverThumb || '/public/wiki/default-article.jpg'}}');"
+            style="background-image: url('{{coverThumb || '/public/wiki/default-article.png'}}');"
           >
             <span class="wiki-post-search-post-content">
               <h3>{{title}}</h3>
