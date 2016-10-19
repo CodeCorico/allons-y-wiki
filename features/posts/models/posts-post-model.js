@@ -278,6 +278,7 @@ module.exports = function() {
                 .update({
                   id: this.id
                 }, {
+                  content: this.content,
                   emojis: this.emojis
                 })
                 .exec(function() {
