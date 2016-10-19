@@ -1,5 +1,5 @@
 {
   "files": [
-    "public/wiki/wiki-index.js"
+    "./public/wiki/wiki-index.js"
   ]
 }
