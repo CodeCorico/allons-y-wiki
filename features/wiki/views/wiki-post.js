@@ -227,6 +227,7 @@
           '<div ',
             'class="',
               'emoji emoji-', emoji.emoji.icon,
+              ' ', (!_user || !_user.id ? 'is-unknown' : ''),
               ' ', (emoji.contributing ? 'contributing' : ''),
               ' ', (after && i === 0 ? 'after-first' : ''),
               ' ', specialCls,
@@ -242,22 +243,21 @@
         ].join('');
       }).join(''));
 
-      var lastEmojiButton = _$el.content.find('.newEmoji:last')[0];
+      var lastEmojiButton = _$el.content.find('.newEmoji:last')[0],
+          $newEmoji = _$el.content.find('.newEmoji');
 
-      _$el.content.find('.newEmoji')
-        .removeClass('newEmoji')
-        .click(function(event) {
+      $newEmoji.removeClass('newEmoji');
+
+      if (_user && _user.id) {
+        $newEmoji.click(function(event) {
           _toggleEmoji(this, event, $this[0]);
         });
+      }
 
       return lastEmojiButton;
     }
 
     function _applyReactions() {
-      if (!_user || !_user.id) {
-        return;
-      }
-
       _$el.content.find('.add-reaction').remove();
 
       var emojis = WikiPost.get('post.emojis');
@@ -275,7 +275,6 @@
               imgInTable = false,
               after = tagName == 'PRE' || tagName == 'IMG' || $this.hasClass('mceCover'),
               specialCls = [],
-              $addReactionButton = $('<div class="add-reaction"></div>'),
               nodeId = $this.attr('data-emoji'),
               lastEmojiButton = null;
 
@@ -320,33 +319,37 @@
             specialCls.push('after-first');
           }
 
-          if (specialCls.length) {
-            $addReactionButton.addClass(specialCls.join(' '));
-          }
+          if (_user && _user.id) {
+            var $addReactionButton = $('<div class="add-reaction"></div>');
 
-          if (after && lastEmojiButton) {
-            $(lastEmojiButton).after($addReactionButton);
-          }
-          else if (after) {
-            $this.after($addReactionButton);
-          }
-          else {
-            $this.append($addReactionButton);
-          }
+            if (specialCls.length) {
+              $addReactionButton.addClass(specialCls.join(' '));
+            }
 
-          $addReactionButton.click(function(event) {
-            _addReactionMenu(this, event, $this[0]);
-          });
+            if (after && lastEmojiButton) {
+              $(lastEmojiButton).after($addReactionButton);
+            }
+            else if (after) {
+              $this.after($addReactionButton);
+            }
+            else {
+              $this.append($addReactionButton);
+            }
 
-          $this
-            .off('mouseenter')
-            .on('mouseenter', function() {
-              $addReactionButton.addClass('hover');
-            })
-            .off('mouseleave')
-            .on('mouseleave', function() {
-              $addReactionButton.removeClass('hover');
+            $addReactionButton.click(function(event) {
+              _addReactionMenu(this, event, $this[0]);
             });
+
+            $this
+              .off('mouseenter')
+              .on('mouseenter', function() {
+                $addReactionButton.addClass('hover');
+              })
+              .off('mouseleave')
+              .on('mouseleave', function() {
+                $addReactionButton.removeClass('hover');
+              });
+          }
         });
     }
 
