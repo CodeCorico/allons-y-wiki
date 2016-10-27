@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "allons-y-community": "^1.0.1",
-    "allons-y-texteditor": "^1.0.0",
+    "allons-y-texteditor": "^1.0.1",
     "async": "^2.0.1",
     "extend": "^3.0.0"
   }
