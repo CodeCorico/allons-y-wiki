@@ -60,7 +60,11 @@ module.exports = [{
           .then(function() {
             return WikiService.inWikiHome(isWikiHomeUrl);
           })
-          .then(function() {
+          .then(function(homeUrl) {
+            if (isWikiHomeUrl && homeUrl) {
+              return window.page.redirect('/wiki/' + homeUrl);
+            }
+
             return $Layout.findChild('name', 'wiki-layout').require(
               isWikiHomeUrl ? 'wiki-home' : 'wiki-post'
             );

@@ -93,6 +93,11 @@ module.exports = function() {
         isSearchable: true,
         isSearchableAdvanced: true,
         attributes: {
+          isHome: {
+            type: 'boolean',
+            index: true,
+            defaultsTo: false
+          },
           title: {
             type: 'string',
             index: true,
@@ -1420,6 +1425,59 @@ module.exports = function() {
                     activity.activityStatus = oldActivity.activityStatus;
                   }
                 });
+              });
+          });
+        },
+
+        homeUrl: function(callback) {
+          this
+            .findOne({
+              isHome: true
+            })
+            .exec(function(err, post) {
+              callback(err || !post ? null : post.url);
+            });
+        },
+
+        changeHomeUrl: function($socket, postId, callback) {
+          var _this = this,
+              UserModel = DependencyInjection.injector.model.get('UserModel');
+
+          UserModel.fromSocket($socket, function(err, user) {
+            if (err || !user) {
+              return callback(err || 'no user');
+            }
+
+            var isMembersLeader = false;
+
+            for (var i = 0; i < user.groups.length; i++) {
+              if (user.groups[i].special == 'members' && user.groups[i].isLeader) {
+                isMembersLeader = true;
+
+                break;
+              }
+            }
+
+            if (!isMembersLeader) {
+              return callback('no members leader');
+            }
+
+            _this
+              .update({
+                isHome: true
+              }, {
+                isHome: false
+              })
+              .exec(function() {
+                _this
+                  .update({
+                    id: postId
+                  }, {
+                    isHome: true
+                  })
+                  .exec(function(err, posts) {
+                    callback(err, posts && posts.length ? posts[0] : null);
+                  });
               });
           });
         }

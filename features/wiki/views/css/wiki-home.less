@@ -1,72 +1,48 @@
 @import "web";
 
-.wiki-home-container {
-  z-index: 3;
-  display: none;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  overflow: hidden;
+@-webkit-keyframes wiki-home-noresult-show { 0% { opacity: 0; margin-top: 6rem; } 100% { opacity: 1; margin-top: -4rem; } }
+@-moz-keyframes wiki-home-noresult-show { 0% { opacity: 0; margin-top: 6rem; } 100% { opacity: 1; margin-top: -4rem; } }
+@-ms-keyframes wiki-home-noresult-show { 0% { opacity: 0; margin-top: 6rem; } 100% { opacity: 1; margin-top: -4rem; } }
+@-o-keyframes wiki-home-noresult-show { 0% { opacity: 0; margin-top: 6rem; } 100% { opacity: 1; margin-top: -4rem; } }
+@keyframes wiki-home-noresult-show { 0% { opacity: 0; margin-top: 6rem; } 100% { opacity: 1; margin-top: -4rem; } }
 
-  &.before-show {
-    opacity: 0;
-    display: block;
-  }
-
-  &.show {
-    opacity: 1;
-    display: block;
-    .transition(all 0.35s @easeOutQuart);
-  }
-
-  &.hide {
-    opacity: 0;
-    display: block;
-    .transition(all 0.35s @easeOutQuart);
-  }
-
-  .row-bg {
-    background: #333;
-  }
-
-  .six.columns.full-width {
-    width: 50%;
-    margin-left: 0;
-  }
-
-  .six.columns {
-    &:first-child {
-      > .pl-title {
-        margin-left: 0;
-      }
-    }
-  }
-}
 
 .wiki-home {
-  position: relative;
-  height: 100%;
-  margin-left: 0;
+  .wiki-home-noresult {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    .transform(translateY(-50%));
+    padding: 6rem 2rem 2rem;
+    text-align: center;
+    margin-top: -4rem;
+    .animation(wiki-home-noresult-show 0.55s);
 
-  .wiki-home-content {
-    margin-top: 6rem;
+    img {
+      background: @accentColor;
+      width: 214px;
+      max-width: 90%;
+      margin-bottom: 2rem;
+    }
 
-    h2 {
-      font-size: 2rem;
+    h1 {
+      font-size: 4rem;
+      margin-bottom: 2rem;
+    }
+
+    p {
+      max-width: 450px;
+      margin: 0 auto;
+    }
+
+    a, a:hover, a:visited {
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
     }
   }
-}
 
-.media-mobile {
-  .wiki-home-container {
-    .six.columns.full-width {
-      width: 100%;
-    }
-
-    .six.columns > .pl-title {
-      margin-left: 0;
-    }
-  }
 }

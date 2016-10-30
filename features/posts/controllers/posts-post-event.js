@@ -38,127 +38,141 @@ module.exports = [{
       }
 
       var userIsContributor = false,
-          viewsIncremented = false;
+          viewsIncremented = false,
+          isMembersLeader = false;
 
-      if (post.contributors) {
-        for (var i = 0; i < post.contributors.length; i++) {
-          if (post.contributors[i].id == $socket.user.id) {
-            userIsContributor = true;
+      UserModel.fromSocket($socket, function(err, user) {
+        if (user) {
+          for (var i = 0; i < user.groups.length; i++) {
+            if (user.groups[i].special == 'members' && user.groups[i].isLeader) {
+              isMembersLeader = true;
 
-            break;
+              break;
+            }
           }
         }
-      }
 
-      if (!userIsContributor && !$message.lock) {
-        var viewsLength = post.views.toString().length;
+        if (post.contributors) {
+          for (var i = 0; i < post.contributors.length; i++) {
+            if (post.contributors[i].id == $socket.user.id) {
+              userIsContributor = true;
 
-        post.views++;
-        viewsIncremented = true;
-
-        if (post.views.toString().length != viewsLength) {
-          PostModel.nowPostUpdate(post.publicData(), null, 'views');
+              break;
+            }
+          }
         }
 
-        $SocketsService.emit($socket, {
-          'route.url': /^\/wiki/
-        }, null, 'read(posts/post.views)', {
-          id: post.id,
-          views: post.views
-        });
-      }
+        if (!userIsContributor && !$message.lock) {
+          var viewsLength = post.views.toString().length;
 
-      var returnMessage = {
-            isOwner: true,
-            enterMode: $message.enterMode,
-            enterUrl: $message.enterUrl,
-            post: post.publicData({
-              locked: false
-            })
-          },
-          ownerLocked = PostModel.populateLocked($SocketsService, $socket, returnMessage.post);
+          post.views++;
+          viewsIncremented = true;
 
-      if ($socket.user.postLocked) {
-        $SocketsService.emit($socket, {
-          'route.url': /^\/wiki/
-        }, null, 'read(posts/post.unlock)', {
-          id: $socket.user.postLocked
-        });
+          if (post.views.toString().length != viewsLength) {
+            PostModel.nowPostUpdate(post.publicData(), null, 'views');
+          }
 
-        $socket.user.postLocked = null;
-
-        PostModel.postsEdited($socket, false);
-      }
-
-      if ($message.lock && returnMessage.post.locked) {
-        returnMessage.alreadyLocked = true;
-      }
-      else if ($message.lock && (!returnMessage.post.locked || ownerLocked)) {
-        PostModel.applyLocked(returnMessage.post, $socket);
-
-        $SocketsService.emit($socket, {
-          'route.url': /^\/wiki/
-        }, null, 'read(posts/post.lock)', {
-          post: returnMessage.post
-        });
-
-        PostModel.refreshPost(post);
-        PostModel.refreshPostLocked(post);
-        PostModel.postsEdited($socket, post.id);
-
-        $allonsy.log('allons-y-wiki', 'posts:post-lock', {
-          label: 'Lock the <strong>' + post.title + '</strong> article',
-          socket: $socket,
-          post: PostModel.mongo.objectId(post.id),
-          postTitle: post.title
-        });
-
-        returnMessage.locked = true;
-      }
-
-      post.populateBackposts(function(err, backposts) {
-        if (err) {
-          return $SocketsService.error($socket, $message, 'read(posts/post)', err);
-        }
-
-        returnMessage.post.backposts = (backposts || []).map(function(post) {
-          return post.tileData();
-        });
-
-        $socket.emit('read(posts/post)', returnMessage);
-
-        PostModel
-          .update({
-            id: post.id
-          }, {
+          $SocketsService.emit($socket, {
+            'route.url': /^\/wiki/
+          }, null, 'read(posts/post.views)', {
+            id: post.id,
             views: post.views
-          })
-          .exec(function() {
-            if (viewsIncremented) {
-              PostModel.refreshPost(post);
-            }
-            else if (returnMessage.locked && !returnMessage.alreadyLocked) {
-              PostModel.refreshPost(post);
-              PostModel.refreshPostLocked(post);
-              PostModel.postsEdited($socket, post.id);
-            }
-
-            if (viewsIncremented) {
-              PostModel.callMostOpenedPosts();
-            }
-
-            $allonsy.log('allons-y-wiki', 'posts:post-open', {
-              label: 'Open the <strong>' + post.title + '</strong> article',
-              socket: $socket,
-              post: PostModel.mongo.objectId(post.id),
-              postTitle: post.title,
-              metric: {
-                key: 'wikiOpenArticle',
-                name: 'Open article',
-                description: 'Open an article, whatever the origin.'
-              }
-            });
           });
+        }
+
+        var returnMessage = {
+              isOwner: true,
+              enterMode: $message.enterMode,
+              enterUrl: $message.enterUrl,
+              post: post.publicData({
+                locked: false,
+                canLinkToHome: isMembersLeader
+              })
+            },
+            ownerLocked = PostModel.populateLocked($SocketsService, $socket, returnMessage.post);
+
+        if ($socket.user.postLocked) {
+          $SocketsService.emit($socket, {
+            'route.url': /^\/wiki/
+          }, null, 'read(posts/post.unlock)', {
+            id: $socket.user.postLocked
+          });
+
+          $socket.user.postLocked = null;
+
+          PostModel.postsEdited($socket, false);
+        }
+
+        if ($message.lock && returnMessage.post.locked) {
+          returnMessage.alreadyLocked = true;
+        }
+        else if ($message.lock && (!returnMessage.post.locked || ownerLocked)) {
+          PostModel.applyLocked(returnMessage.post, $socket);
+
+          $SocketsService.emit($socket, {
+            'route.url': /^\/wiki/
+          }, null, 'read(posts/post.lock)', {
+            post: returnMessage.post
+          });
+
+          PostModel.refreshPost(post);
+          PostModel.refreshPostLocked(post);
+          PostModel.postsEdited($socket, post.id);
+
+          $allonsy.log('allons-y-wiki', 'posts:post-lock', {
+            label: 'Lock the <strong>' + post.title + '</strong> article',
+            socket: $socket,
+            post: PostModel.mongo.objectId(post.id),
+            postTitle: post.title
+          });
+
+          returnMessage.locked = true;
+        }
+
+        post.populateBackposts(function(err, backposts) {
+          if (err) {
+            return $SocketsService.error($socket, $message, 'read(posts/post)', err);
+          }
+
+          returnMessage.post.backposts = (backposts || []).map(function(post) {
+            return post.tileData();
+          });
+
+          $socket.emit('read(posts/post)', returnMessage);
+
+          PostModel
+            .update({
+              id: post.id
+            }, {
+              views: post.views
+            })
+            .exec(function() {
+              if (viewsIncremented) {
+                PostModel.refreshPost(post);
+              }
+              else if (returnMessage.locked && !returnMessage.alreadyLocked) {
+                PostModel.refreshPost(post);
+                PostModel.refreshPostLocked(post);
+                PostModel.postsEdited($socket, post.id);
+              }
+
+              if (viewsIncremented) {
+                PostModel.callMostOpenedPosts();
+              }
+
+              $allonsy.log('allons-y-wiki', 'posts:post-open', {
+                label: 'Open the <strong>' + post.title + '</strong> article',
+                socket: $socket,
+                post: PostModel.mongo.objectId(post.id),
+                postTitle: post.title,
+                metric: {
+                  key: 'wikiOpenArticle',
+                  name: 'Open article',
+                  description: 'Open an article, whatever the origin.'
+                }
+              });
+            });
+        });
       });
     });
   }

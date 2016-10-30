@@ -165,6 +165,12 @@
             {{/EMOJIS}}
             </div>
           {{/if}}
+          {{#if post.canLinkToHome && !post.isHome}}
+            <button on-click="linkToHome">{{_('Link this article to the Wiki\'s Home')}}</button>
+          {{/if}}
+          {{#if post.isHome}}
+            <p class="homeLinked success"><i class="fa fa-link"></i> {{_('This article is linked to the Wiki\'s Home')}}</p>
+          {{/if}}
         </div>
       </section>
       <section class="pl-section s-contributors">

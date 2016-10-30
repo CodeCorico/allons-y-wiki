@@ -558,7 +558,19 @@ module.exports = function() {
         return new window.Ractive.Promise(function(fulfil) {
           _inWikiHome = !!inWikiHome;
 
-          _this.fire(_inWikiHome ? 'teardownWikiPost' : 'teardownWikiHome', null, fulfil);
+          _this.fire(_inWikiHome ? 'teardownWikiPost' : 'teardownWikiHome', null, function() {
+            if (_inWikiHome) {
+              $socket.once('read(posts/home)', function(args) {
+                return fulfil(args && args.homeUrl || null);
+              });
+
+              $socket.emit('call(posts/home)');
+
+              return;
+            }
+
+            fulfil();
+          });
         });
       };
     })();

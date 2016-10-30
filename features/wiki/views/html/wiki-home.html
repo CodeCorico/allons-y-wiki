@@ -1,47 +1,9 @@
-<div class="wiki-home-container {{show}}">
-
-  <section class="wiki-home">
-
-    <rv-require name="pl-scrolls" src="/public/vendor/plumes/scrolls/pl-scrolls"></rv-require>
-
-    <div class="pl-scrolls">
-
-      {{#inject wiki-home-before /}}
-
-      <div class="wiki-home-content">
-        <div class="row row-bg">
-          <div class="six columns full-width">
-
-            <h2 class="pl-title">{{_('Most read')}}</h2>
-
-            {{#inject wiki-home-most-read}}
-              <rv-require
-                name="wiki-posts-list"
-                src="/public/wiki/wiki-posts-list"
-
-                data-type="mostopened"
-                data-count="10"
-                data-on-postsloaded="postsMostReadLoaded"
-              ></rv-require>
-            {{/inject}}
-          </div>
-          <div class="six columns full-width">
-
-            <h2 class="pl-title">{{_('Last created')}}</h2>
-
-            {{#inject wiki-home-last-created}}
-              <rv-require
-                name="wiki-posts-list"
-                src="/public/wiki/wiki-posts-list"
-
-                data-type="lastcreated"
-                data-count="10"
-                data-on-postsloaded="postsLastCreatedLoaded"
-              ></rv-require>
-            {{/inject}}
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="wiki-home">
+  <section class="wiki-home-noresult">
+    <img src="/public/wiki/wiki-home-hero.png" />
+    <h1>{{_('No index article linked.')}}</h1>
+    <p>
+      {{_('You can link an article to the Wiki\'s Home. If you have the right permissions, go to an article, edit it, and click on the "Link this article to the Wiki\'s Home" button.')}}
+    </p>
   </section>
 </div>

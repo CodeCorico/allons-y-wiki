@@ -2,9 +2,9 @@
   'use strict';
 
   window.Ractive.controllerInjection('wiki-details', [
-    '$Page', '$Layout', 'WikiService', '$component', '$data', '$done',
+    '$socket', '$Page', '$Layout', 'WikiService', '$component', '$data', '$done',
   function wikiDetailsController(
-    $Page, $Layout, WikiService, $component, $data, $done
+    $socket, $Page, $Layout, WikiService, $component, $data, $done
   ) {
 
     var W = ['what', 'where', 'when', 'who', 'why', 'how'],
@@ -239,6 +239,14 @@
 
         _hasModifications();
       }, 350);
+    });
+
+    WikiDetails.on('linkToHome', function() {
+      WikiDetails.set('post.isHome', true);
+
+      $socket.emit('update(posts/home)', {
+        id: WikiDetails.get('post.id')
+      });
     });
 
     _$el.scrolls = _$el.component.find('.pl-scrolls');
