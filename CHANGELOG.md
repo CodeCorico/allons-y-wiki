@@ -1,3 +1,9 @@
+<a name="1.0.2"></a>
+# [1.0.2](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.1...1.0.2) (2016-10-30)
+
+### Features
+* **wiki:** link the /wiki home page to an article [#0f472da](https://github.com/CodeCorico/allons-y-wiki/commit/0f472da)
+
 <a name="1.0.1"></a>
 # [1.0.1](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.0...1.0.1) (2016-10-27)
 
