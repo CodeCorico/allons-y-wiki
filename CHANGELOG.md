@@ -1,3 +1,12 @@
+<a name="1.0.3"></a>
+# [1.0.3](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.2...1.0.3) (2016-11-02)
+
+### Bug Fixes
+* ***:** rename wrong "SegoeUI" font to "Segoe UI" [#03a4af5](https://github.com/CodeCorico/allons-y-wiki/commit/03a4af5)
+* **wiki post item:** don't dislay the locked when it's not available [#aa0ef1b](https://github.com/CodeCorico/allons-y-wiki/commit/aa0ef1b)
+* **wiki home:** teardown the Wiki Home when changing the page [#79250b1](https://github.com/CodeCorico/allons-y-wiki/commit/79250b1)
+* **wiki details:** enable the link to the Wiki home button on edit mode [#1dc671a](https://github.com/CodeCorico/allons-y-wiki/commit/1dc671a)
+
 <a name="1.0.2"></a>
 # [1.0.2](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.1...1.0.2) (2016-10-30)
 
