@@ -45,7 +45,8 @@
         _updateActivityDateTimeout = null,
         _realtimeComponent = 'wikiPostItemController' + WikiPostItem.get('componentId'),
         _realtimeListEvent = null,
-        _lastId = null;
+        _lastId = null,
+        _locked = null;
 
     function _displayEmojis(post) {
       var displayEmojis = [];
@@ -165,6 +166,10 @@
       });
 
       if (_lastId == id) {
+        if (isNow) {
+          WikiPostItem.set('post.locked', _locked);
+        }
+
         return;
       }
       _lastId = id;
@@ -184,6 +189,7 @@
           post.displayEmojis = null;
 
           if (isNow) {
+            _locked = args.post.locked;
             WikiPostItem.set('post.locked', args.post.locked);
           }
           else {

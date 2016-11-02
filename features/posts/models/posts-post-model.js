@@ -1373,6 +1373,7 @@ module.exports = function() {
                 delete postPublicData.redirections;
                 delete postPublicData.summary;
                 delete postPublicData.contributors;
+                delete postPublicData.locked;
 
                 postPublicData.activityPostType = type;
 
@@ -1380,7 +1381,6 @@ module.exports = function() {
                   postPublicData.activityStatus = 'has published';
                 }
                 else if (type == 'delete') {
-                  delete postPublicData.locked;
                   postPublicData.activityStatus = 'has deleted';
                 }
                 else if (type == 'update') {

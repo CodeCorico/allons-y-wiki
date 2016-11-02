@@ -762,6 +762,13 @@ module.exports = [{
       return;
     }
 
+
+    if ($socket.user.postLocked != $message.id) {
+      return;
+    }
+
+    $socket.user.postLocked = null;
+
     var async = require('async');
 
     PostModel
@@ -810,6 +817,9 @@ module.exports = [{
               deleted: true
             });
 
+            PostModel.refreshPostLocked({
+              id: $message.id
+            });
             PostModel.callLastCreatedPosts();
             PostModel.callLastUpdatedPosts();
             PostModel.callMostOpenedPosts();
