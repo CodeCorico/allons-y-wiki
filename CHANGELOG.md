@@ -1,3 +1,12 @@
+<a name="1.0.4"></a>
+# [1.0.4](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.3...1.0.4) (2016-11-06)
+
+### Features
+* **posts post model:** don't display posts on Now search without the "wiki-access" permission [#a5c9e60](https://github.com/CodeCorico/allons-y-wiki/commit/a5c9e60)
+
+### Bug Fixes
+* **posts post model:** check for wiki-access & members-access permissions for callCoworkers [#7e75e2b](https://github.com/CodeCorico/allons-y-wiki/commit/7e75e2b)
+
 <a name="1.0.3"></a>
 # [1.0.3](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.2...1.0.3) (2016-11-02)
 
