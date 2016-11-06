@@ -53,6 +53,7 @@ module.exports = function() {
             call: 'callContributions'
           },
           'users-wiki-coworkers': {
+            permissions: ['wiki-access', 'members-access'],
             call: 'callCoworkers'
           }
         },
