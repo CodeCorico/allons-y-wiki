@@ -373,6 +373,14 @@ module.exports = function() {
             });
           }
 
+          var $NowService = DependencyInjection.injector.controller.get('$NowService', true);
+
+          if ($NowService) {
+            $NowService.searchQuery(function() {
+              _this.nowSearchQuery.apply(_this, arguments);
+            });
+          }
+
           async.waterfall([function(next) {
 
             _this
@@ -427,6 +435,18 @@ module.exports = function() {
               next();
             });
           }]);
+        },
+
+        nowSearchQuery: function(query, $socket, $message, callback) {
+          if (!$socket || !$socket.user || !$socket.user.hasPermission('wiki-access')) {
+            query.entityType = query.entityType || {
+              $nin: []
+            };
+
+            query.entityType.$nin.push('post');
+          }
+
+          callback();
         },
 
         webCreateLinks: function(sockets, sections, callback) {
