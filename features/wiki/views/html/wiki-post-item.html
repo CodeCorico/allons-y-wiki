@@ -43,6 +43,10 @@
     <span class="wiki-post-item-views">{{post.views}} {{_(post.views > 1 ? 'views' : 'view')}}</span>
   {{/if}}
 
+  {{#if typeof post.backpostsCount != 'undefined'}}
+    <span class="wiki-post-item-views">{{_('mentioned in')}} {{post.backpostsCount}} {{_(post.backpostsCount > 1 ? 'articles' : 'article')}}</span>
+  {{/if}}
+
   {{#if (!nodescription || nodescription != 'true') && post.description}}
     <span class="wiki-post-item-summary">{{{post.description}}}</span>
   {{/if}}

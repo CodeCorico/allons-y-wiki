@@ -1038,9 +1038,25 @@ module.exports = function() {
 
                   contributions = posts;
 
-                  nextFunction();
+                  if (!contributions.length) {
+                    return nextFunction();
+                  }
+
+                  async.eachSeries(contributions, function(contribution, nextContribution) {
+
+                    _this.countBackposts(contribution.id, function(count) {
+                      contribution.backpostsCount = count;
+
+                      nextContribution();
+                    });
+
+                  }, function() {
+                    nextFunction();
+                  });
+
                 });
               }], function() {
+
                 $RealTimeService.fire(eventName, {
                   posts: contributions
                 }, $socket || null);
@@ -1506,6 +1522,16 @@ module.exports = function() {
                   });
               });
           });
+        },
+
+        countBackposts: function(postId, callback) {
+          this
+            .count({
+              linksPosts: postId
+            })
+            .exec(function(err, count) {
+              callback(count || 0);
+            });
         }
       };
 
