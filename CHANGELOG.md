@@ -1,3 +1,10 @@
+<a name="1.0.5"></a>
+# [1.0.5](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.4...1.0.5) (2016-11-08)
+
+### Features
+* ***:** add web-home metrics permissions [#ed53bcd](https://github.com/CodeCorico/allons-y-wiki/commit/ed53bcd)
+* **wiki:** display the backposts count of an article in the member's profile contributions section [#5b12eda](https://github.com/CodeCorico/allons-y-wiki/commit/5b12eda)
+
 <a name="1.0.4"></a>
 # [1.0.4](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.3...1.0.4) (2016-11-06)
 
