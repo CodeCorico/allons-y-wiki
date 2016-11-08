@@ -364,12 +364,14 @@ module.exports = function() {
             $WebHomeService.metric({
               name: 'postsOpened',
               title: 'articles opened',
+              permissions: ['wiki-access'],
               value: 0
             });
 
             $WebHomeService.metric({
               name: 'postsEdited',
               title: 'articles under edition',
+              permissions: ['wiki-access'],
               value: 0
             });
           }
@@ -393,6 +395,7 @@ module.exports = function() {
                   $WebHomeService.metric({
                     name: 'postsCount',
                     title: 'articles',
+                    permissions: ['wiki-access'],
                     value: _postsCount
                   });
                 }
@@ -413,6 +416,7 @@ module.exports = function() {
                   $WebHomeService.metric({
                     name: 'contributorsCount',
                     title: 'contributors',
+                    permissions: ['wiki-access'],
                     value: _contributorsCount
                   });
                 }
@@ -429,6 +433,7 @@ module.exports = function() {
                 $WebHomeService.metric({
                   name: 'reactionsCount',
                   title: 'reactions',
+                  permissions: ['wiki-access'],
                   value: _reactionsCount
                 });
               }

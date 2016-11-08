@@ -41,6 +41,7 @@ module.exports = function() {
               $WebHomeService.metric({
                 name: 'tagsCount',
                 title: 'tags',
+                permissions: ['wiki-access'],
                 value: _tagsCount
               });
             }
