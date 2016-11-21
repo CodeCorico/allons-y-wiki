@@ -1437,7 +1437,7 @@ module.exports = function() {
                   postPublicData.activityStatus = 'has reacted <span class="emoji-icon emoji-' + args + '"></span>';
                 }
                 else if (type == 'emoji-removed') {
-                  postPublicData.activityStatus = 'removes a <span class="emoji-icon emoji-' + args + '"></span>';
+                  postPublicData.activityStatus = 'has removed a <span class="emoji-icon emoji-' + args + '"></span>';
                 }
                 else if (type == 'views') {
                   postPublicData.activityStatus =
