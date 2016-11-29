@@ -1,3 +1,9 @@
+<a name="1.0.7"></a>
+# [1.0.7](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.6...1.0.7) (2016-11-29)
+
+### Bug Fixes
+* **posts post model:** delete search attributes from the now posts [#d848d73](https://github.com/CodeCorico/allons-y-wiki/commit/d848d73)
+
 <a name="1.0.6"></a>
 # [1.0.6](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.5...1.0.6) (2016-11-21)
 
