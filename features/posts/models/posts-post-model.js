@@ -355,7 +355,7 @@ module.exports = function() {
           }, WIKI_HOME_TILE), ['wiki-access']);
 
           $WebCreateService.links(function() {
-            _this.webCreateLinks.apply(this, arguments);
+            return _this.webCreateLinks.apply(this, arguments);
           });
 
           var $WebHomeService = DependencyInjection.injector.controller.get('$WebHomeService', true);
@@ -380,7 +380,7 @@ module.exports = function() {
 
           if ($NowService) {
             $NowService.searchQuery(function() {
-              _this.nowSearchQuery.apply(_this, arguments);
+              return _this.nowSearchQuery.apply(_this, arguments);
             });
           }
 
@@ -1453,6 +1453,10 @@ module.exports = function() {
                     avatarMini: member.avatarMini
                   };
                 }
+
+                delete postPublicData.search1;
+                delete postPublicData.search2;
+                delete postPublicData.search3;
 
                 $NowService.add(users, postPublicData, function(oldActivity, activity) {
                   if (
