@@ -1,3 +1,9 @@
+<a name="1.0.8"></a>
+# [1.0.8](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.7...1.0.8) (2016-11-30)
+
+### Features
+* **posts event:** update the wiki urls on CRUD articles [#4135f25](https://github.com/CodeCorico/allons-y-wiki/commit/4135f25)
+
 <a name="1.0.7"></a>
 # [1.0.7](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.6...1.0.7) (2016-11-29)
 
