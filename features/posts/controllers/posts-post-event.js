@@ -182,7 +182,8 @@ module.exports = [{
   permissions: ['wiki-access', 'wiki-write'],
   controller: function(
     $allonsy, $socket, $SocketsService, $i18nService, $message, PostModel, UserModel, TagModel,
-    webUrlFactory, postsSummaryFactory, postsDescriptionFactory, postsLinkFactory, postsCoverThumbsFactory
+    $WebService, webUrlFactory,
+    postsSummaryFactory, postsDescriptionFactory, postsLinkFactory, postsCoverThumbsFactory
   ) {
     if (!this.validMessage($message, {
       post: ['object', 'filled']
@@ -264,6 +265,7 @@ module.exports = [{
                   created: true
                 });
 
+                $WebService.updateUrl('/wiki/' + post.url);
                 PostModel.refreshLastCreatedPosts(post.id, $socket);
                 PostModel.refreshLastUpdatedPosts(post.id, $socket);
 
@@ -425,7 +427,8 @@ module.exports = [{
   permissions: ['wiki-access', 'wiki-write'],
   controller: function(
     $allonsy, $socket, $SocketsService, $i18nService, $message, PostModel, UserModel,
-    webUrlFactory, postsSummaryFactory, postsDescriptionFactory, postsLinkFactory, postsCoverThumbsFactory, postsEmojiFactory
+    $WebService, webUrlFactory,
+    postsSummaryFactory, postsDescriptionFactory, postsLinkFactory, postsCoverThumbsFactory, postsEmojiFactory
   ) {
     if (!this.validMessage($message, {
       post: ['object', 'filled']
@@ -445,7 +448,8 @@ module.exports = [{
         TagModel = DependencyInjection.injector.controller.get('TagModel'),
         olStatus = null,
         isNewStatus = false,
-        isNewUrl = false;
+        isNewUrl = false,
+        oldUrl = null;
 
     function savePost(post, postUrlChanged) {
       UserModel.fromSocket($socket, function(err, contributor) {
@@ -566,6 +570,7 @@ module.exports = [{
                   enterMode: $message.enterMode
                 });
 
+                $WebService.updateUrl('/wiki/' + post.url);
                 PostModel.refreshPost(post);
                 PostModel.callLastUpdatedPosts();
                 PostModel.nowPostUpdate(
@@ -576,6 +581,8 @@ module.exports = [{
                 );
 
                 if (postUrlChanged) {
+                  $WebService.updateUrl('/wiki/' + oldUrl);
+
                   PostModel.searchPostLinks($message.post.id, false, function(err, posts) {
                     if (err) {
                       return $SocketsService.error($socket, $message, 'read(posts/post)', err);
@@ -663,8 +670,9 @@ module.exports = [{
         post.oldTags = post.tags || null;
         post.tags = $message.post.tags || null;
 
+        oldUrl = post.url;
+
         var protectedUrls = PostModel.protectedUrls(),
-            oldUrl = post.url,
             newUrl = webUrlFactory($message.post.url);
 
         if (newUrl && newUrl != oldUrl) {
@@ -755,13 +763,12 @@ module.exports = [{
 
   event: 'delete(posts/post)',
   permissions: ['wiki-access', 'wiki-write'],
-  controller: function($allonsy, $socket, $SocketsService, $i18nService, PostModel, TagModel, $message) {
+  controller: function($allonsy, $socket, $SocketsService, $i18nService, PostModel, TagModel, $message, $WebService) {
     if (!this.validMessage($message, {
       id: 'filled'
     })) {
       return;
     }
-
 
     if ($socket.user.postLocked != $message.id) {
       return;
@@ -817,6 +824,7 @@ module.exports = [{
               deleted: true
             });
 
+            $WebService.updateUrl('/wiki/' + deletedPost.url);
             PostModel.refreshPostLocked({
               id: $message.id
             });

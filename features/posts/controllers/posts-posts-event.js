@@ -26,7 +26,7 @@ module.exports = [{
 }, {
   event: 'update(posts/home)',
   permissions: ['wiki-access', 'wiki-write'],
-  controller: function($socket, PostModel, $message) {
+  controller: function($socket, PostModel, $message, $WebService) {
     if (!this.validMessage($message, {
       id: ['string', 'filled']
     })) {
@@ -37,6 +37,8 @@ module.exports = [{
       if (err || !post) {
         return;
       }
+
+      $WebService.updateUrl('/wiki');
 
       $socket.emit('read(posts/home)', {
         homeUrl: post.url
