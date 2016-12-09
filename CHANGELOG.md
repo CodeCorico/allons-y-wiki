@@ -1,3 +1,9 @@
+<a name="1.0.9"></a>
+# [1.0.9](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.8...1.0.9) (2016-12-09)
+
+### Bug Fixes
+* **posts content thumbs factory back:** good rootPath [#d5877e1](https://github.com/CodeCorico/allons-y-wiki/commit/d5877e1)
+
 <a name="1.0.8"></a>
 # [1.0.8](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.7...1.0.8) (2016-11-30)
 
