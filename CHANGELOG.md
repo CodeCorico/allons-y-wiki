@@ -1,3 +1,9 @@
+<a name="1.0.10"></a>
+# [1.0.10](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.9...1.0.10) (2017-01-18)
+
+### Features
+* **wiki:** update allons-y-community to 1.1.0
+
 <a name="1.0.9"></a>
 # [1.0.9](https://github.com/CodeCorico/allons-y-wiki/compare/1.0.8...1.0.9) (2016-12-09)
 
