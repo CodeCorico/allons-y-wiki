@@ -18,7 +18,7 @@
     "allons-y-dev-chore": "^1.0.0"
   },
   "dependencies": {
-    "allons-y-community": "^1.0.12",
+    "allons-y-community": "^1.1.0",
     "allons-y-texteditor": "^1.0.3",
     "async": "^2.0.1",
     "extend": "^3.0.0"
